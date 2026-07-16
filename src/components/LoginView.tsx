@@ -29,53 +29,16 @@ export const LoginView: React.FC<LoginViewProps> = ({
           <GraduationCap className="h-10 w-10" />
         </div>
         <h2 className="text-3xl font-display font-bold text-slate-900 tracking-tight">
-          LMTMS Informatika SMA
+          LMTMS
         </h2>
         <p className="mt-2 text-sm text-slate-500">
-          Sistem Manajemen Pembelajaran & Administrasi Guru Terpadu
+          Learning Management & Teaching Management System
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-xl border border-slate-100 rounded-2xl sm:px-10">
-          {/* Shortcut Login Cepat */}
-          <div className="mb-6 p-4 bg-blue-50/70 border border-blue-100 rounded-xl" id="quick-login-box">
-            <span className="block text-xs font-semibold text-blue-800 tracking-wider uppercase mb-3 text-center">
-              Akses Cepat Evaluasi
-            </span>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => quickLogin("GURU")}
-                className="py-2 px-1 text-center bg-white border border-blue-200 hover:border-blue-400 rounded-lg text-xs font-medium text-blue-700 shadow-sm transition"
-                id="btn-quick-guru"
-              >
-                Masuk Guru
-              </button>
-              <button
-                onClick={() => quickLogin("SISWA")}
-                className="py-2 px-1 text-center bg-white border border-blue-200 hover:border-blue-400 rounded-lg text-xs font-medium text-blue-700 shadow-sm transition"
-                id="btn-quick-siswa"
-              >
-                Masuk Siswa
-              </button>
-              <button
-                onClick={() => quickLogin("ADMIN")}
-                className="py-2 px-1 text-center bg-white border border-blue-200 hover:border-blue-400 rounded-lg text-xs font-medium text-blue-700 shadow-sm transition"
-                id="btn-quick-admin"
-              >
-                Masuk Admin
-              </button>
-            </div>
-          </div>
 
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-slate-400">Atau Gunakan Kredensial</span>
-            </div>
-          </div>
 
           <form className="space-y-4" onSubmit={handleLogin} id="credential-login-form">
             <div>
@@ -85,7 +48,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                placeholder="yogi / ahmad / admin"
+                placeholder=""
                 className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
@@ -97,7 +60,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="yogi123 / ahmad123 / admin123"
+                placeholder=""
                 className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
@@ -121,7 +84,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
           <div className="mt-4 text-center">
             <p className="text-xs text-slate-400">
-              LMTMS didukung oleh Gemini Pro AI Engine untuk penyusunan Administrasi Guru Kurikulum Merdeka secara otomatis.
+              informatika@smandacis
             </p>
           </div>
         </div>
