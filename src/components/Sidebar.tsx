@@ -10,7 +10,8 @@ import {
   LogOut,
   ShieldCheck,
   Activity,
-  Sparkles
+  Sparkles,
+  X
 } from "lucide-react";
 import { User } from "../types";
 
@@ -20,6 +21,8 @@ interface SidebarProps {
   setCurrentTab: (tab: any) => void;
   onLogout: () => void;
   setSelectedDoc?: (doc: any) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -27,33 +30,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   setCurrentTab,
   onLogout,
-  setSelectedDoc
+  setSelectedDoc,
+  isOpen = false,
+  onClose
 }) => {
   const changeTab = (tab: any) => {
     setCurrentTab(tab);
     if (setSelectedDoc) {
       setSelectedDoc(null);
     }
+    if (onClose) {
+      onClose(); // Auto-close drawer on mobile navigation
+    }
   };
 
-  return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 no-print" id="app-sidebar-nav">
+  const navContent = (
+    <>
       <div>
         {/* Logo Brand */}
-        <div className="p-6 border-b border-slate-800 flex items-center gap-3" id="brand-logo-container">
-          <div className="bg-blue-500 text-white p-2 rounded-lg flex items-center justify-center font-bold">
-            <GraduationCap className="h-6 w-6" />
+        <div className="p-6 border-b border-slate-800 flex items-center justify-between" id="brand-logo-container">
+          <div className="flex items-center gap-3">
+            <div className="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center font-bold">
+              <GraduationCap className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-white font-display font-bold text-lg leading-none">LMTMS</h1>
+              <p className="text-[10px] text-slate-400 tracking-wider">Informatika SMA</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-white font-display font-bold text-lg leading-none">LMTMS</h1>
-            <p className="text-[10px] text-slate-400 tracking-wider">Informatika SMA</p>
-          </div>
+          {/* Close button for mobile */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="md:hidden p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         {/* User Profile Summary */}
         <div className="px-6 py-4 bg-slate-950/40 border-b border-slate-800" id="user-profile-summary">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center text-blue-400 font-bold border border-slate-700">
+            <div className="h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400 font-bold border border-slate-700">
               {user.nama.charAt(0)}
             </div>
             <div className="overflow-hidden">
@@ -72,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => changeTab("dashboard")}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
               currentTab === "dashboard"
-                ? "bg-slate-800 text-white"
+                ? "bg-indigo-600 text-white font-semibold"
                 : "text-slate-400 hover:text-white hover:bg-slate-800/50"
             }`}
             id="nav-link-dashboard"
@@ -85,26 +104,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => changeTab("lms")}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
               currentTab === "lms"
-                ? "bg-slate-800 text-white"
+                ? "bg-indigo-600 text-white font-semibold"
                 : "text-slate-400 hover:text-white hover:bg-slate-800/50"
             }`}
             id="nav-link-lms"
           >
-            <GraduationCap className="h-4 w-4 text-blue-400 font-bold" />
-            <span className="font-bold text-white">LMS (Learning System)</span>
+            <GraduationCap className="h-4 w-4 text-indigo-400 font-bold" />
+            <span className="font-bold">LMS (Learning System)</span>
           </button>
 
           <button
             onClick={() => changeTab("teaching")}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
               currentTab === "teaching"
-                ? "bg-slate-800 text-white"
+                ? "bg-indigo-600 text-white font-semibold"
                 : "text-slate-400 hover:text-white hover:bg-slate-800/50"
             }`}
             id="nav-link-teaching"
           >
             <ClipboardCheck className="h-4 w-4 text-emerald-400 font-bold" />
-            <span className="font-bold text-white">Teaching Management</span>
+            <span className="font-bold">Teaching Management</span>
           </button>
 
           {(user.role === "GURU" || user.role === "ADMIN") && (
@@ -112,7 +131,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => changeTab("ai_assistant")}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
                 currentTab === "ai_assistant"
-                  ? "bg-slate-800 text-white"
+                  ? "bg-indigo-600 text-white font-semibold"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/50"
               }`}
               id="nav-link-ai-assistant"
@@ -127,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => changeTab("perangkat")}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
                 currentTab === "perangkat"
-                  ? "bg-slate-800 text-white"
+                  ? "bg-indigo-600 text-white font-semibold"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/50"
               }`}
               id="nav-link-perangkat"
@@ -141,7 +160,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => changeTab("materi")}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
               currentTab === "materi"
-                ? "bg-slate-800 text-white"
+                ? "bg-indigo-600 text-white font-semibold"
                 : "text-slate-400 hover:text-white hover:bg-slate-800/50"
             }`}
             id="nav-link-materi"
@@ -154,7 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => changeTab("tugas")}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
               currentTab === "tugas"
-                ? "bg-slate-800 text-white"
+                ? "bg-indigo-600 text-white font-semibold"
                 : "text-slate-400 hover:text-white hover:bg-slate-800/50"
             }`}
             id="nav-link-tugas"
@@ -168,7 +187,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => changeTab("absensi")}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
                 currentTab === "absensi"
-                  ? "bg-slate-800 text-white"
+                  ? "bg-indigo-600 text-white font-semibold"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/50"
               }`}
               id="nav-link-absensi"
@@ -183,7 +202,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => changeTab("administrasi")}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
                 currentTab === "administrasi"
-                  ? "bg-slate-800 text-white"
+                  ? "bg-indigo-600 text-white font-semibold"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/50"
               }`}
               id="nav-link-administrasi"
@@ -198,7 +217,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => changeTab("logs")}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
                 currentTab === "logs"
-                  ? "bg-slate-800 text-white"
+                  ? "bg-indigo-600 text-white font-semibold"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/50"
               }`}
               id="nav-link-logs"
@@ -212,7 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => changeTab("settings")}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
               currentTab === "settings"
-                ? "bg-slate-800 text-white"
+                ? "bg-indigo-600 text-white font-semibold"
                 : "text-slate-400 hover:text-white hover:bg-slate-800/50"
             }`}
             id="nav-link-settings"
@@ -241,6 +260,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <LogOut className="h-4 w-4 text-rose-400" />
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* DESKTOP SIDEBAR - STAYS PINNED */}
+      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 no-print hidden md:flex h-screen sticky top-0 border-r border-slate-800" id="app-sidebar-nav">
+        {navContent}
+      </aside>
+
+      {/* MOBILE DRAWER OVERLAY */}
+      <div
+        className={`fixed inset-0 bg-slate-950/60 z-40 transition-opacity duration-300 md:hidden no-print ${
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={onClose}
+      />
+
+      {/* MOBILE DRAWER PANEL */}
+      <aside
+        className={`fixed top-0 bottom-0 left-0 w-64 bg-slate-900 text-slate-300 flex flex-col justify-between no-print z-50 transition-transform duration-300 ease-out md:hidden ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        id="app-sidebar-nav-mobile"
+      >
+        {navContent}
+      </aside>
+    </>
   );
 };

@@ -65,6 +65,7 @@ router.post("/absensi/simpan", enforceRole(["GURU", "ADMIN"]), absensiController
 
 // 7. DASHBOARD ANALITIKA ROUTES
 router.get("/analitika", analitikaController.getAnalitika);
+router.post("/analitika/import", enforceRole(["GURU", "ADMIN"]), analitikaController.importData);
 
 // 8. ACADEMIC MANAGEMENT ROUTES
 router.post("/academic/users", enforceRole(["ADMIN"]), academicController.createUser);

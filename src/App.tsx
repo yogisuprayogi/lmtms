@@ -170,6 +170,222 @@ export default function App() {
 
   // PWA & Simulated Offline states
   const [isOnline, setIsOnline] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem("lmtms_dark") === "true";
+  });
+  const [activeTheme, setActiveTheme] = useState(() => {
+    return localStorage.getItem("lmtms_theme") || "classic";
+  });
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [toasts, setToasts] = useState<any[]>([]);
+  const [offlineQueue, setOfflineQueue] = useState<any[]>(() => {
+    const stored = localStorage.getItem("lmtms_offline_queue");
+    return stored ? JSON.parse(stored) : [];
+  });
+  const [notifications, setNotifications] = useState<any[]>(() => {
+    const stored = localStorage.getItem("lmtms_notifications");
+    if (stored) return JSON.parse(stored);
+    return [
+      {
+        id: "1",
+        title: "👋 Selamat Datang di LMTMS!",
+        message: "Sistem Portal Administrasi & LMS terpadu siap digunakan.",
+        time: "10:00",
+        type: "info",
+        read: false
+      },
+      {
+        id: "2",
+        title: "📱 PWA Offline Ready!",
+        message: "Aplikasi ini dapat diakses sepenuhnya tanpa koneksi internet.",
+        time: "10:01",
+        type: "info",
+        read: false
+      }
+    ];
+  });
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  };
+
+  const handleAddNotification = (title: string, message: string, type: "info" | "alert" = "info") => {
+    const newNotif = {
+      id: Math.random().toString(36).substring(2, 9),
+      title,
+      message,
+      time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+      type,
+      read: false
+    };
+    const updated = [newNotif, ...notifications];
+    setNotifications(updated);
+    localStorage.setItem("lmtms_notifications", JSON.stringify(updated));
+    showToast(title, type === "alert" ? "error" : "success");
+  };
+
+  const handleClearNotification = (id: string) => {
+    const updated = notifications.filter((n) => n.id !== id);
+    setNotifications(updated);
+    localStorage.setItem("lmtms_notifications", JSON.stringify(updated));
+  };
+
+  const handleClearAllNotifications = () => {
+    setNotifications([]);
+    localStorage.setItem("lmtms_notifications", "[]");
+    showToast("Seluruh notifikasi berhasil dibersihkan.", "info");
+  };
+
+  // Sync offline queue actions
+  const processOfflineQueue = async () => {
+    const queue = JSON.parse(localStorage.getItem("lmtms_offline_queue") || "[]");
+    if (queue.length === 0) return;
+
+    showToast(`Mensinkronisasikan ${queue.length} perubahan offline...`, "info");
+    let successCount = 0;
+
+    for (const item of queue) {
+      try {
+        if (item.action === "save_attendance") {
+          const dataAbsensi = Object.entries(item.payload.grid).map(([siswaId, info]: [string, any]) => {
+            return {
+              siswaId,
+              siswaNama: "Siswa",
+              status: info.status,
+              catatan: info.catatan,
+            };
+          });
+
+          await fetch("/api/absensi/simpan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              tanggal: item.payload.date,
+              kelas: item.payload.class,
+              dataAbsensi,
+            }),
+          });
+        } else if (item.action === "grade_submission") {
+          await fetch("/api/tugas/nilai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: item.payload.id,
+              nilai: item.payload.nilai,
+              catatanGuru: item.payload.catatan,
+            }),
+          });
+        }
+        successCount++;
+      } catch (err) {
+        console.error("Gagal sinkronisasi item:", item, err);
+      }
+    }
+
+    localStorage.setItem("lmtms_offline_queue", "[]");
+    setOfflineQueue([]);
+    
+    if (successCount > 0) {
+      showToast(`Berhasil menyinkronkan ${successCount} data ke server!`, "success");
+      handleAddNotification(
+        "🔄 Sinkronisasi Offline Berhasil",
+        `Sebanyak ${successCount} perubahan berhasil diselaraskan ke server utama.`,
+        "info"
+      );
+      fetchAnalitika();
+    }
+  };
+
+  const handleToggleOnlineSimulated = () => {
+    if (isOnline) {
+      setIsOnline(false);
+      showToast("Mode Offline PWA Diaktifkan (Simulasi)", "info");
+    } else {
+      setIsOnline(true);
+      showToast("Kembali Online. Menyinkronkan...", "success");
+      processOfflineQueue();
+    }
+  };
+
+  // Browser online listener
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      showToast("Koneksi Internet Pulih! Mensinkronisasikan...", "success");
+      processOfflineQueue();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      showToast("Koneksi Internet Terputus. Masuk ke Mode Offline.", "info");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Initial check
+    setIsOnline(navigator.onLine);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // Apply theme & dark mode to document element
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDarkMode);
+    localStorage.setItem("lmtms_dark", String(isDarkMode));
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    const themes: Record<string, Record<string, string>> = {
+      classic: {
+        "--theme-primary": "#4f46e5",
+        "--theme-primary-hover": "#3730a3",
+        "--theme-bg-light": "#f5f3ff",
+        "--theme-text": "#4f46e5",
+        "--theme-border": "#ddd6fe"
+      },
+      emerald: {
+        "--theme-primary": "#10b981",
+        "--theme-primary-hover": "#047857",
+        "--theme-bg-light": "#ecfdf5",
+        "--theme-text": "#047857",
+        "--theme-border": "#a7f3d0"
+      },
+      amethyst: {
+        "--theme-primary": "#8b5cf6",
+        "--theme-primary-hover": "#6d28d9",
+        "--theme-bg-light": "#f5f3ff",
+        "--theme-text": "#6d28d9",
+        "--theme-border": "#ddd6fe"
+      },
+      sunset: {
+        "--theme-primary": "#ec4899",
+        "--theme-primary-hover": "#be185d",
+        "--theme-bg-light": "#fdf2f8",
+        "--theme-text": "#be185d",
+        "--theme-border": "#fbcfe8"
+      },
+      amber: {
+        "--theme-primary": "#f59e0b",
+        "--theme-primary-hover": "#b45309",
+        "--theme-bg-light": "#fffbeb",
+        "--theme-text": "#b45309",
+        "--theme-border": "#fde68a"
+      }
+    };
+
+    const currentMap = themes[activeTheme] || themes.classic;
+    Object.entries(currentMap).forEach(([prop, val]) => {
+      document.documentElement.style.setProperty(prop, val);
+    });
+    localStorage.setItem("lmtms_theme", activeTheme);
+  }, [activeTheme]);
 
   // Fetch initial system data
   useEffect(() => {
@@ -597,9 +813,45 @@ export default function App() {
     }
   };
 
-  // Guru Menilai Submission
   const handleGradeSubmission = async () => {
     if (!selectedSubmissionForGrading) return;
+    
+    if (!isOnline) {
+      const queueItem = {
+        id: Math.random().toString(36).substr(2, 9),
+        action: "grade_submission",
+        payload: {
+          id: selectedSubmissionForGrading.id,
+          nilai: gradingScore,
+          catatan: gradingComment
+        },
+        title: `Nilai Siswa: ${selectedSubmissionForGrading.siswaNama}`,
+        time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+      };
+      
+      const updatedQueue = [...offlineQueue, queueItem];
+      setOfflineQueue(updatedQueue);
+      localStorage.setItem("lmtms_offline_queue", JSON.stringify(updatedQueue));
+
+      // Local state update to feel instantaneous
+      const updatedSubmission = {
+        ...selectedSubmissionForGrading,
+        nilai: gradingScore,
+        catatanGuru: gradingComment,
+        status: "SELESAI"
+      };
+      setSubmissions(submissions.map(s => s.id === selectedSubmissionForGrading.id ? updatedSubmission : s));
+      setSelectedSubmissionForGrading(null);
+      
+      showToast("Offline Mode: Penilaian disimpan dalam antrean lokal!", "success");
+      handleAddNotification(
+        "🗃️ Penilaian Disimpan Offline",
+        `Hasil evaluasi siswa ${selectedSubmissionForGrading.siswaNama} dicatat dalam antrean sinkronisasi lokal.`,
+        "info"
+      );
+      return;
+    }
+
     try {
       const res = await fetch("/api/tugas/nilai", {
         method: "POST",
@@ -614,16 +866,42 @@ export default function App() {
       if (data.success) {
         setSubmissions(submissions.map(s => s.id === selectedSubmissionForGrading.id ? data.data : s));
         setSelectedSubmissionForGrading(null);
-        alert("Penilaian berhasil disimpan!");
+        showToast("Penilaian berhasil disimpan ke server!", "success");
         fetchAnalitika();
       }
     } catch (err) {
       console.error(err);
+      showToast("Koneksi gagal. Gagal menyimpan penilaian.", "error");
     }
   };
 
   // Absensi Simpan
   const handleSaveAttendance = async () => {
+    if (!isOnline) {
+      const queueItem = {
+        id: Math.random().toString(36).substr(2, 9),
+        action: "save_attendance",
+        payload: { date: attendanceDate, class: attendanceClass, grid: attendanceGrid },
+        title: `Presensi Kelas ${attendanceClass}`,
+        time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+      };
+      
+      const updatedQueue = [...offlineQueue, queueItem];
+      setOfflineQueue(updatedQueue);
+      localStorage.setItem("lmtms_offline_queue", JSON.stringify(updatedQueue));
+      
+      showToast("Offline Mode: Presensi disimpan dalam antrean lokal!", "success");
+      setAbsensiNotification("Presensi hari ini berhasil direkam secara lokal (Offline Mode)!");
+      setTimeout(() => setAbsensiNotification(""), 4000);
+      
+      handleAddNotification(
+        "📝 Presensi Disimpan Offline",
+        `Daftar kehadiran kelas ${attendanceClass} tanggal ${attendanceDate} dicatat secara lokal.`,
+        "info"
+      );
+      return;
+    }
+
     const dataAbsensi = Object.entries(attendanceGrid).map(([siswaId, info]: [string, any]) => {
       const student = studentList.find(s => s.id === siswaId);
       return {
@@ -646,12 +924,14 @@ export default function App() {
       });
       const data = await res.json();
       if (data.success) {
+        showToast("Presensi hari ini berhasil disinkronkan ke server!", "success");
         setAbsensiNotification("Presensi hari ini berhasil disimpan ke pangkalan data!");
         setTimeout(() => setAbsensiNotification(""), 4000);
         fetchAnalitika();
       }
     } catch (err) {
       console.error(err);
+      showToast("Koneksi gagal. Gagal menyimpan presensi.", "error");
     }
   };
 
@@ -753,7 +1033,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-200">
       {/* SIDEBAR NAVIGATION - NO-PRINT */}
       <Sidebar
         user={user}
@@ -761,20 +1041,59 @@ export default function App() {
         setCurrentTab={setCurrentTab}
         onLogout={handleLogout}
         setSelectedDoc={setSelectedDoc}
+        isOpen={mobileSidebarOpen}
+        onClose={() => setMobileSidebarOpen(false)}
       />
 
       {/* MAIN CONTAINER */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* HEADER BAR - NO-PRINT */}
-        <Header user={user} activeYear={activeYear} />
+        <Header
+          user={user}
+          activeYear={activeYear}
+          notifications={notifications}
+          onClearNotification={handleClearNotification}
+          onClearAllNotifications={handleClearAllNotifications}
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+          activeTheme={activeTheme}
+          onChangeTheme={(theme) => setActiveTheme(theme)}
+          isOnline={isOnline}
+          onToggleOnlineSimulated={handleToggleOnlineSimulated}
+          onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+        />
+
+        {/* FLOATING TOAST STACK */}
+        <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full no-print">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className={`p-3.5 rounded-xl shadow-lg border text-xs font-semibold flex items-center justify-between gap-3 animate-fade-in transition-all ${
+                toast.type === "success"
+                  ? "bg-emerald-600 border-emerald-500 text-white"
+                  : toast.type === "error"
+                  ? "bg-rose-600 border-rose-500 text-white"
+                  : "bg-slate-800 border-slate-700 text-white"
+              }`}
+            >
+              <span>{toast.message}</span>
+              <button
+                onClick={() => setToasts(toasts.filter((t) => t.id !== toast.id))}
+                className="text-white/70 hover:text-white font-bold ml-2 font-mono text-[10px]"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
 
         {/* COMPONENT BODY */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {/* ======================================= */}
           {/* TAB 1: DASHBOARD ANALITIKA & RINGKASAN */}
           {/* ======================================= */}
           {currentTab === "dashboard" && (
-            <AnalitikaView user={user} analitika={analitika} />
+            <AnalitikaView user={user} analitika={analitika} onRefresh={fetchAnalitika} />
           )}
 
           {/* ======================================= */}
@@ -1901,6 +2220,15 @@ export default function App() {
                 setUser(updatedUser);
                 localStorage.setItem("lmtms_user", JSON.stringify(updatedUser));
               }}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+              activeTheme={activeTheme}
+              onChangeTheme={(theme) => setActiveTheme(theme)}
+              isOnline={isOnline}
+              onToggleOnlineSimulated={handleToggleOnlineSimulated}
+              offlineQueueLength={offlineQueue.length}
+              onTriggerSync={processOfflineQueue}
+              onAddNotification={handleAddNotification}
             />
           )}
         </main>

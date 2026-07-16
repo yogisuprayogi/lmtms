@@ -1,13 +1,34 @@
 import React, { useState } from "react";
-import { Shield, KeyRound, Smartphone, Save, AlertCircle, CheckCircle, Fingerprint } from "lucide-react";
+import { Shield, KeyRound, Smartphone, Save, AlertCircle, CheckCircle, Fingerprint, Palette, Sun, Moon, Wifi } from "lucide-react";
 import { User } from "../types";
 
 interface SettingsViewProps {
   user: User;
   onUpdateUser: (updatedUser: User) => void;
+  isDarkMode?: boolean;
+  onToggleDarkMode?: () => void;
+  activeTheme?: string;
+  onChangeTheme?: (themeName: string) => void;
+  isOnline?: boolean;
+  onToggleOnlineSimulated?: () => void;
+  offlineQueueLength?: number;
+  onTriggerSync?: () => void;
+  onAddNotification?: (title: string, message: string, type: "info" | "alert") => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ user, onUpdateUser }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({
+  user,
+  onUpdateUser,
+  isDarkMode = false,
+  onToggleDarkMode,
+  activeTheme = "classic",
+  onChangeTheme,
+  isOnline = true,
+  onToggleOnlineSimulated,
+  offlineQueueLength = 0,
+  onTriggerSync,
+  onAddNotification
+}) => {
   // Profile states
   const [nama, setNama] = useState(user.nama);
   const [email, setEmail] = useState(user.email);
@@ -482,6 +503,160 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ user, onUpdateUser }
                 <span>{mfaError}</span>
               </div>
             )}
+          </div>
+
+          {/* Section 4: Visual Theme Customize Panel */}
+          <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm space-y-4">
+            <h4 className="font-display font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+              <Palette className="h-5 w-5 text-indigo-500" />
+              <span>Tema Visual & Personalisasi Antarmuka</span>
+            </h4>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Atur nuansa warna dan mode kegelapan portal LMTMS agar sesuai dengan preferensi kenyamanan mata Anda saat mendesain materi pembelajaran atau mengerjakan evaluasi.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              {/* Mode Tampilan */}
+              <div className="space-y-2">
+                <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Mode Pencahayaan</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={onToggleDarkMode}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-semibold transition ${
+                      !isDarkMode
+                        ? "border-indigo-600 bg-indigo-50/50 text-indigo-700 font-bold"
+                        : "border-slate-200 hover:bg-slate-50 text-slate-600 dark:text-slate-300"
+                    }`}
+                  >
+                    <Sun className="h-4 w-4 text-amber-500" />
+                    <span>Mode Terang</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onToggleDarkMode}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-semibold transition ${
+                      isDarkMode
+                        ? "border-indigo-600 bg-indigo-900/40 text-indigo-400 font-bold"
+                        : "border-slate-200 hover:bg-slate-50 text-slate-600 dark:text-slate-300"
+                    }`}
+                  >
+                    <Moon className="h-4 w-4 text-indigo-400" />
+                    <span>Mode Gelap (Malam)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Pilihan Warna Aksen */}
+              <div className="space-y-2">
+                <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Aksen Warna Utama</span>
+                <select
+                  value={activeTheme}
+                  onChange={(e) => onChangeTheme?.(e.target.value)}
+                  className="block w-full border border-slate-200 rounded-xl p-2.5 text-xs bg-white font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                >
+                  <option value="classic">Indigo (Classic Blue)</option>
+                  <option value="emerald">Emerald Oasis (Green)</option>
+                  <option value="amethyst">Amethyst Royal (Purple)</option>
+                  <option value="sunset">Sunset Flare (Rose Pink)</option>
+                  <option value="amber">Amber Glow (Yellow-Orange)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 5: PWA Offline Sync & Notification Simulator Dashboard */}
+          <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm space-y-4">
+            <h4 className="font-display font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+              <Smartphone className="h-5 w-5 text-emerald-500" />
+              <span>PWA Offline Sync & Pusat Simulasi</span>
+            </h4>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              LMTMS dirancang sebagai **Progressive Web App (PWA)** mandiri yang beroperasi penuh dalam kondisi offline. Anda dapat menguji keandalan penanganan sinkronisasi antrean data dan simulasi pengiriman push notifikasi di sini.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {/* Box status offline queue */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Antrean Sinkronisasi</span>
+                  <span className={`px-2 py-0.5 rounded-full font-mono text-[9px] font-bold ${
+                    (offlineQueueLength || 0) > 0 ? "bg-amber-100 text-amber-800 animate-pulse" : "bg-emerald-100 text-emerald-800"
+                  }`}>
+                    {(offlineQueueLength || 0) > 0 ? `${offlineQueueLength} Menunggu` : "Sinkron / Kosong"}
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400">
+                  Aksi yang dilakukan saat offline akan disimpan dalam antrean lokal `localStorage` dan otomatis disinkronkan ke pangkalan data server saat internet pulih.
+                </p>
+                <button
+                  type="button"
+                  onClick={onTriggerSync}
+                  disabled={!isOnline || (offlineQueueLength || 0) === 0}
+                  className="w-full py-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-100 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                >
+                  <Wifi className="h-3.5 w-3.5" />
+                  <span>Sinkronkan Sekarang</span>
+                </button>
+              </div>
+
+              {/* Box simulator push notification */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Simulator Notifikasi Push</span>
+                  <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                </div>
+                <p className="text-[10px] text-slate-400">
+                  Simulasikan kedatangan notifikasi push instan dari sistem LMTMS (misal pengumuman akademik, atau evaluasi kuis baru dari guru).
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onAddNotification?.(
+                      "📚 Evaluasi Informatika Baru",
+                      "Kuis Pilihan Ganda Elemen Jaringan Komputer dan Internet telah diterbitkan.",
+                      "info"
+                    )}
+                    className="flex-1 py-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 rounded-lg text-[10px] font-bold transition text-center"
+                  >
+                    Simulasi Info
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onAddNotification?.(
+                      "⚠️ Peringatan Keamanan",
+                      "Deteksi upaya masuk mencurigakan dari alamat IP baru yang tidak dikenali.",
+                      "alert"
+                    )}
+                    className="flex-1 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 rounded-lg text-[10px] font-bold transition text-center"
+                  >
+                    Simulasi Alert
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Cache Storage Manager */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-3.5 bg-emerald-50/20 dark:bg-slate-800/40 border border-emerald-100/50 dark:border-slate-700 rounded-2xl text-xs">
+              <div className="space-y-0.5">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 block">Penyimpanan Cache Aset offline</span>
+                <p className="text-[10px] text-slate-400">PWA menyimpan aset statis berukuran ~4.2 MB agar portal dimuat instan tanpa kuota.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.caches) {
+                    caches.keys().then((names) => {
+                      for (const name of names) caches.delete(name);
+                    });
+                    alert("Seluruh cache offline PWA berhasil dibersihkan! Silakan muat ulang halaman.");
+                  }
+                }}
+                className="px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 rounded-lg font-semibold text-xs transition shrink-0"
+              >
+                Kosongkan Cache PWA
+              </button>
+            </div>
           </div>
         </div>
       </div>
