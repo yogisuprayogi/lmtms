@@ -1,0 +1,6 @@
+{
+  "name": "LMTMS Informatika SMA",
+  "description": "Sistem Manajemen Pembelajaran dan Administrasi Guru Terpadu Khusus Informatika SMA Kurikulum Merdeka dengan Bantuan AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

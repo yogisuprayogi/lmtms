@@ -1,0 +1,22 @@
+{
+  "name": "LMTMS Informatika SMA",
+  "short_name": "LMTMS",
+  "description": "Sistem Manajemen Pembelajaran dan Administrasi Guru Terpadu Khusus Informatika SMA Kurikulum Merdeka",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
