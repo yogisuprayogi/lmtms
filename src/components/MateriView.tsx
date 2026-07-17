@@ -1,6 +1,133 @@
 import React, { useState } from "react";
-import { Plus, Trash2, ChevronLeft, ChevronRight, BookOpen, AlertCircle } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, BookOpen, AlertCircle, PenTool, Globe, FileText, FileSpreadsheet, Presentation, Video, Music, Image, File } from "lucide-react";
 import { User, Materi, ELEMEN_INFORMATIKA } from "../types";
+
+export const getMateriIcon = (m: Materi) => {
+  if (m.tipe === "LINK") {
+    return {
+      Icon: Globe,
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
+      borderColor: "border-emerald-200 dark:border-emerald-800",
+      label: "Tautan Link",
+    };
+  }
+  if (m.tipe === "TEKS" || !m.tipe) {
+    return {
+      Icon: PenTool,
+      color: "text-indigo-600 dark:text-indigo-400",
+      bgColor: "bg-indigo-50 dark:bg-indigo-950/20",
+      borderColor: "border-indigo-200 dark:border-indigo-800",
+      label: "Teks Manual",
+    };
+  }
+
+  // File type checks
+  const fileTipe = m.fileTipe || "";
+  const fileNama = (m.fileNama || "").toLowerCase();
+
+  if (fileTipe.startsWith("image/") || fileNama.endsWith(".png") || fileNama.endsWith(".jpg") || fileNama.endsWith(".jpeg") || fileNama.endsWith(".gif") || fileNama.endsWith(".webp") || fileNama.endsWith(".svg")) {
+    return {
+      Icon: Image,
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-950/20",
+      borderColor: "border-blue-200 dark:border-blue-800",
+      label: "Gambar",
+    };
+  }
+
+  if (fileTipe.startsWith("video/") || fileNama.endsWith(".mp4") || fileNama.endsWith(".mkv") || fileNama.endsWith(".avi") || fileNama.endsWith(".mov") || fileNama.endsWith(".webm")) {
+    return {
+      Icon: Video,
+      color: "text-rose-600 dark:text-rose-400",
+      bgColor: "bg-rose-50 dark:bg-rose-950/20",
+      borderColor: "border-rose-200 dark:border-rose-800",
+      label: "Video",
+    };
+  }
+
+  if (fileTipe.startsWith("audio/") || fileNama.endsWith(".mp3") || fileNama.endsWith(".wav") || fileNama.endsWith(".ogg") || fileNama.endsWith(".m4a") || fileNama.endsWith(".flac")) {
+    return {
+      Icon: Music,
+      color: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-50 dark:bg-amber-950/20",
+      borderColor: "border-amber-200 dark:border-amber-800",
+      label: "Audio",
+    };
+  }
+
+  if (fileTipe === "application/pdf" || fileNama.endsWith(".pdf")) {
+    return {
+      Icon: FileText,
+      color: "text-red-600 dark:text-red-400",
+      bgColor: "bg-red-50 dark:bg-red-950/20",
+      borderColor: "border-red-200 dark:border-red-800",
+      label: "PDF",
+    };
+  }
+
+  // Spreadsheet
+  if (
+    fileTipe.includes("sheet") ||
+    fileTipe.includes("excel") ||
+    fileNama.endsWith(".xls") ||
+    fileNama.endsWith(".xlsx") ||
+    fileNama.endsWith(".csv") ||
+    fileNama.endsWith(".ods")
+  ) {
+    return {
+      Icon: FileSpreadsheet,
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
+      borderColor: "border-emerald-200 dark:border-emerald-800",
+      label: "Spreadsheet",
+    };
+  }
+
+  // Presentation
+  if (
+    fileTipe.includes("presentation") ||
+    fileTipe.includes("powerpoint") ||
+    fileNama.endsWith(".ppt") ||
+    fileNama.endsWith(".pptx") ||
+    fileNama.endsWith(".odp")
+  ) {
+    return {
+      Icon: Presentation,
+      color: "text-orange-600 dark:text-orange-400",
+      bgColor: "bg-orange-50 dark:bg-orange-950/20",
+      borderColor: "border-orange-200 dark:border-orange-800",
+      label: "Presentasi",
+    };
+  }
+
+  // Word/Docs
+  if (
+    fileTipe.includes("word") ||
+    fileTipe.includes("document") ||
+    fileNama.endsWith(".doc") ||
+    fileNama.endsWith(".docx") ||
+    fileNama.endsWith(".odt") ||
+    fileNama.endsWith(".txt")
+  ) {
+    return {
+      Icon: FileText,
+      color: "text-sky-600 dark:text-sky-400",
+      bgColor: "bg-sky-50 dark:bg-sky-950/20",
+      borderColor: "border-sky-200 dark:border-sky-800",
+      label: "Dokumen",
+    };
+  }
+
+  // Default File
+  return {
+    Icon: File,
+    color: "text-slate-600 dark:text-slate-400",
+    bgColor: "bg-slate-50 dark:bg-slate-800/30",
+    borderColor: "border-slate-200 dark:border-slate-800",
+    label: "File",
+  };
+};
 
 interface MateriViewProps {
   user: User;
@@ -23,12 +150,80 @@ export const MateriView: React.FC<MateriViewProps> = ({
     elemen: "BK",
     kelas: "X" as "X" | "XI" | "XII",
     konten: "",
+    tipe: "TEKS" as "TEKS" | "FILE" | "LINK",
+    lampiranUrl: "",
+    fileNama: "",
+    fileTipe: "",
+    fileUkuran: "",
+    fileData: "",
   });
   const [errorMsg, setErrorMsg] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const selectedMeta = selectedMateri ? getMateriIcon(selectedMateri) : null;
+  const SelectedIcon = selectedMeta ? selectedMeta.Icon : BookOpen;
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const processFile = (file: File) => {
+    setIsUploading(true);
+    setErrorMsg("");
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Data = event.target?.result as string;
+      
+      let sizeStr = "";
+      if (file.size < 1024) sizeStr = `${file.size} B`;
+      else if (file.size < 1024 * 1024) sizeStr = `${(file.size / 1024).toFixed(1)} KB`;
+      else sizeStr = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+
+      setMateriForm((prev) => ({
+        ...prev,
+        fileNama: file.name,
+        fileTipe: file.type,
+        fileUkuran: sizeStr,
+        fileData: base64Data,
+        konten: `Materi Berupa File Lampiran: ${file.name}`,
+      }));
+      setIsUploading(false);
+    };
+    reader.onerror = () => {
+      setErrorMsg("Gagal membaca file.");
+      setIsUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleCreateMateri = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
+
+    if (materiForm.tipe === "FILE" && !materiForm.fileData) {
+      setErrorMsg("Silakan unggah file materi terlebih dahulu.");
+      return;
+    }
+    if (materiForm.tipe === "LINK" && !materiForm.lampiranUrl) {
+      setErrorMsg("Silakan isi tautan URL link terlebih dahulu.");
+      return;
+    }
+
     try {
       const res = await fetch("/api/materi", {
         method: "POST",
@@ -40,7 +235,19 @@ export const MateriView: React.FC<MateriViewProps> = ({
         onAddMateri(data.data);
         setIsCreatingMateri(false);
         setSelectedMateri(data.data);
-        setMateriForm({ judul: "", deskripsi: "", elemen: "BK", kelas: "X", konten: "" });
+        setMateriForm({
+          judul: "",
+          deskripsi: "",
+          elemen: "BK",
+          kelas: "X",
+          konten: "",
+          tipe: "TEKS",
+          lampiranUrl: "",
+          fileNama: "",
+          fileTipe: "",
+          fileUkuran: "",
+          fileData: "",
+        });
       } else {
         setErrorMsg(data.message || "Gagal menerbitkan materi.");
       }
@@ -231,16 +438,138 @@ export const MateriView: React.FC<MateriViewProps> = ({
               />
             </div>
 
+            {/* Selector Tipe Materi */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Isi Materi Pembelajaran (Format Markdown)</label>
-              <textarea
-                required
-                value={materiForm.konten}
-                onChange={(e) => setMateriForm({ ...materiForm, konten: e.target.value })}
-                placeholder="Tulis materi lengkap di sini..."
-                className="block w-full border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm focus:outline-indigo-500 font-mono h-[300px] dark:bg-slate-800 dark:text-slate-100"
-              />
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Metode Input Materi</label>
+              <div className="grid grid-cols-3 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setMateriForm({ ...materiForm, tipe: "TEKS", lampiranUrl: "", fileNama: "", fileTipe: "", fileUkuran: "", fileData: "", konten: "" })}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                    materiForm.tipe === "TEKS"
+                      ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-800"
+                  }`}
+                >
+                  <PenTool className="h-3.5 w-3.5" />
+                  <span>Tulis Manual</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMateriForm({ ...materiForm, tipe: "FILE", lampiranUrl: "", fileNama: "", fileTipe: "", fileUkuran: "", fileData: "", konten: "" })}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                    materiForm.tipe === "FILE"
+                      ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-800"
+                  }`}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Unggah File</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMateriForm({ ...materiForm, tipe: "LINK", lampiranUrl: "", fileNama: "", fileTipe: "", fileUkuran: "", fileData: "", konten: "" })}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                    materiForm.tipe === "LINK"
+                      ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-800"
+                  }`}
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  <span>Tautan Link</span>
+                </button>
+              </div>
             </div>
+
+            {/* Form Fields depend on selected Tipe */}
+            {materiForm.tipe === "TEKS" && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Isi Materi Pembelajaran (Format Markdown)</label>
+                <textarea
+                  required
+                  value={materiForm.konten}
+                  onChange={(e) => setMateriForm({ ...materiForm, konten: e.target.value })}
+                  placeholder="Tulis materi lengkap di sini..."
+                  className="block w-full border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm focus:outline-indigo-500 font-mono h-[300px] dark:bg-slate-800 dark:text-slate-100"
+                />
+              </div>
+            )}
+
+            {materiForm.tipe === "FILE" && (
+              <div className="space-y-3">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Pilih atau Unggah File Materi</label>
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-xl p-8 text-center transition flex flex-col items-center justify-center cursor-pointer ${
+                    isDragging
+                      ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
+                      : "border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+                  }`}
+                  onClick={() => document.getElementById("file-materi-input")?.click()}
+                >
+                  <input
+                    type="file"
+                    id="file-materi-input"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) processFile(file);
+                    }}
+                  />
+                  <BookOpen className="h-10 w-10 text-indigo-500/80 mb-3" />
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Seret & Lepas file ke sini, atau <span className="text-indigo-600 dark:text-indigo-400 underline font-bold">pilih file</span>
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-2">
+                    Mendukung file dokumen, spreadsheet, presentasi, animasi, audio, video, gambar, dll.
+                  </p>
+                </div>
+
+                {/* File Upload Info */}
+                {materiForm.fileNama && (
+                  <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-150 dark:border-slate-800 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                        <BookOpen className="h-5 w-5" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100 line-clamp-1">{materiForm.fileNama}</p>
+                        <p className="text-xs text-slate-400 font-medium">Ukuran: {materiForm.fileUkuran} • Tipe: {materiForm.fileTipe || "File"}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMateriForm(prev => ({ ...prev, fileNama: "", fileTipe: "", fileUkuran: "", fileData: "", konten: "" }))}
+                      className="text-xs font-semibold text-slate-400 hover:text-rose-600 transition p-1"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                )}
+                {isUploading && (
+                  <p className="text-xs text-slate-400 animate-pulse font-medium">Membaca file...</p>
+                )}
+              </div>
+            )}
+
+            {materiForm.tipe === "LINK" && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Tautan URL Link Materi</label>
+                  <input
+                    type="url"
+                    required
+                    value={materiForm.lampiranUrl}
+                    onChange={(e) => setMateriForm({ ...materiForm, lampiranUrl: e.target.value, konten: `Materi Berupa Tautan Link: ${e.target.value}` })}
+                    placeholder="https://contoh-link.com/materi-pembelajaran"
+                    className="block w-full border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm focus:outline-indigo-500 dark:bg-slate-800 dark:text-slate-100"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">Sematkan tautan materi eksternal seperti link Google Drive, YouTube, presentasi, website, dsb.</p>
+                </div>
+              </div>
+            )}
 
             {errorMsg && (
               <div className="p-3 bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 text-xs rounded-xl flex items-center gap-2 border border-rose-100 dark:border-rose-900/50">
@@ -280,13 +609,124 @@ export const MateriView: React.FC<MateriViewProps> = ({
             <span className="text-[10px] font-bold font-mono bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-150/40 uppercase">
               {selectedMateri.elemen}
             </span>
+            {selectedMeta && (
+              <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded border flex items-center gap-1 ${selectedMeta.bgColor} ${selectedMeta.color} ${selectedMeta.borderColor}`}>
+                <SelectedIcon className="h-3 w-3 shrink-0" />
+                <span>{selectedMeta.label}</span>
+              </span>
+            )}
             <span className="text-xs text-slate-400 font-medium">Kelas {selectedMateri.kelas}</span>
           </div>
           <h2 className="text-xl font-display font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 mb-6">
             {selectedMateri.judul}
           </h2>
-          <div className="space-y-4">
-            {formatMarkdown(selectedMateri.konten)}
+
+          <div className="space-y-6">
+            {/* Deskripsi */}
+            {selectedMateri.deskripsi && (
+              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed border-l-4 border-slate-200 dark:border-slate-700 pl-4 py-1 italic">
+                {selectedMateri.deskripsi}
+              </p>
+            )}
+
+            {/* Render sesuai tipe */}
+            {selectedMateri.tipe === "FILE" ? (
+              <div className="p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 text-center space-y-4 max-w-2xl mx-auto">
+                {selectedMeta && (
+                  <div className={`inline-flex p-4 rounded-full border ${selectedMeta.bgColor} ${selectedMeta.color} ${selectedMeta.borderColor}`}>
+                    <SelectedIcon className="h-10 w-10" />
+                  </div>
+                )}
+                <div>
+                  <h4 className="font-display font-bold text-slate-800 dark:text-white text-base">{selectedMateri.fileNama}</h4>
+                  <p className="text-xs text-slate-400 mt-1 font-medium">
+                    Ukuran: {selectedMateri.fileUkuran || "N/A"} • Format: {selectedMateri.fileTipe || "File"}
+                  </p>
+                </div>
+
+                <div className="flex justify-center pt-2">
+                  <a
+                    href={selectedMateri.fileData}
+                    download={selectedMateri.fileNama}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+                  >
+                    <span>Unduh / Simpan File Materi</span>
+                  </a>
+                </div>
+
+                {/* Media Preview inside the app */}
+                {selectedMateri.fileData && (
+                  <div className="mt-6 pt-6 border-t border-slate-150 dark:border-slate-800 text-left">
+                    {/* Image Preview */}
+                    {selectedMateri.fileTipe?.startsWith("image/") && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Pratinjau Gambar:</p>
+                        <img
+                          src={selectedMateri.fileData}
+                          alt={selectedMateri.fileNama}
+                          className="max-h-96 w-auto mx-auto rounded-xl shadow-sm border border-slate-100 dark:border-slate-800"
+                        />
+                      </div>
+                    )}
+                    {/* Audio Preview */}
+                    {selectedMateri.fileTipe?.startsWith("audio/") && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Pratinjau Audio:</p>
+                        <audio src={selectedMateri.fileData} controls className="w-full" />
+                      </div>
+                    )}
+                    {/* Video Preview */}
+                    {selectedMateri.fileTipe?.startsWith("video/") && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Pratinjau Video:</p>
+                        <video src={selectedMateri.fileData} controls className="max-h-96 w-full rounded-xl bg-black" />
+                      </div>
+                    )}
+                    {/* PDF Preview */}
+                    {selectedMateri.fileTipe === "application/pdf" && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Pratinjau PDF:</p>
+                        <iframe
+                          src={selectedMateri.fileData}
+                          title={selectedMateri.fileNama}
+                          className="w-full h-[500px] rounded-xl border border-slate-150 dark:border-slate-800 shadow-sm"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : selectedMateri.tipe === "LINK" ? (
+              <div className="p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 text-center space-y-4 max-w-2xl mx-auto">
+                {selectedMeta && (
+                  <div className={`inline-flex p-4 rounded-full border ${selectedMeta.bgColor} ${selectedMeta.color} ${selectedMeta.borderColor}`}>
+                    <SelectedIcon className="h-10 w-10" />
+                  </div>
+                )}
+                <div>
+                  <h4 className="font-display font-bold text-slate-800 dark:text-white text-base">Tautan Materi Pembelajaran</h4>
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 font-mono break-all font-semibold">
+                    {selectedMateri.lampiranUrl}
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <a
+                    href={selectedMateri.lampiranUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+                  >
+                    <span>Buka Tautan Eksternal</span>
+                    <Globe className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {formatMarkdown(selectedMateri.konten)}
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -298,43 +738,65 @@ export const MateriView: React.FC<MateriViewProps> = ({
               <p className="text-slate-500 dark:text-slate-400 text-xs">Belum ada materi pembelajaran yang diterbitkan.</p>
             </div>
           ) : (
-            materiList.map((m) => (
-              <div
-                key={m.id}
-                className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold font-mono bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-150/40 uppercase">
-                      {m.elemen}
-                    </span>
-                    <span className="text-xs text-slate-400 font-semibold">Kelas {m.kelas}</span>
+            materiList.map((m) => {
+              const meta = getMateriIcon(m);
+              const IconComp = meta.Icon;
+              return (
+                <div
+                  key={m.id}
+                  className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-bold font-mono bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-150/40 uppercase">
+                        {m.elemen}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 ${meta.bgColor} ${meta.color} ${meta.borderColor}`}>
+                          <IconComp className="h-3 w-3 shrink-0" />
+                          <span>{meta.label}</span>
+                        </span>
+                        <span className="text-xs text-slate-400 font-semibold">Kelas {m.kelas}</span>
+                      </span>
+                    </div>
+
+                    <div className="flex items-start gap-3 mt-4">
+                      <div className={`p-2.5 rounded-xl shrink-0 border ${meta.bgColor} ${meta.color} ${meta.borderColor} shadow-sm`}>
+                        <IconComp className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-display font-bold text-slate-900 dark:text-white text-sm line-clamp-2 leading-snug" title={m.judul}>
+                          {m.judul}
+                        </h3>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-1.5 line-clamp-2 leading-relaxed">
+                          {m.deskripsi}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="font-display font-bold text-slate-900 dark:text-white text-sm mt-3.5 line-clamp-1">{m.judul}</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-xs mt-1.5 line-clamp-3 leading-relaxed">{m.deskripsi}</p>
-                </div>
 
-                <div className="flex justify-between items-center mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                  <button
-                    onClick={() => setSelectedMateri(m)}
-                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-0.5 transition"
-                  >
-                    <span>Buka Materi</span>
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </button>
-
-                  {user.role === "GURU" && (
+                  <div className="flex justify-between items-center mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                     <button
-                      onClick={() => handleDeleteMateri(m.id)}
-                      className="text-slate-400 hover:text-rose-600 p-1 transition"
-                      title="Hapus Materi"
+                      onClick={() => setSelectedMateri(m)}
+                      className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-0.5 transition"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <span>Buka Materi</span>
+                      <ChevronRight className="h-3.5 w-3.5" />
                     </button>
-                  )}
+
+                    {user.role === "GURU" && (
+                      <button
+                        onClick={() => handleDeleteMateri(m.id)}
+                        className="text-slate-400 hover:text-rose-600 p-1 transition"
+                        title="Hapus Materi"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

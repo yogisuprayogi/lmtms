@@ -94,6 +94,11 @@ export interface Materi {
   kelas: 'X' | 'XI' | 'XII';
   lampiranUrl?: string;
   tanggalDibuat: string;
+  tipe?: 'TEKS' | 'FILE' | 'LINK';
+  fileNama?: string;
+  fileTipe?: string;
+  fileUkuran?: string;
+  fileData?: string; // Base64 data url
 }
 
 export interface Tugas {
