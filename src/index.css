@@ -184,3 +184,26 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+/* Floating educational icons animation for LoginView */
+@keyframes float-up-sway {
+  0% {
+    transform: translateY(10vh) rotate(0deg) translateX(0px);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.65;
+  }
+  85% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateY(-115vh) rotate(360deg) translateX(45px);
+    opacity: 0;
+  }
+}
+
+.floating-edu-icon {
+  animation: float-up-sway linear infinite;
+}
+
