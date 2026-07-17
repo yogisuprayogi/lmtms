@@ -323,6 +323,13 @@ Bagaimana cara sistem navigasi peta di HP Anda merekomendasikan rute tercepat di
     jadwals,
     calendarEvents,
     guruMappings,
+    identitasSekolah: {
+      nama: "SMAN 1 Informatika",
+      npsn: "20103241",
+      alamat: "Jl. Core IT No. 102, Silicon Valley",
+      kepalaSekolah: "Yogi Suprayogi, S.Kom.",
+      logo: ""
+    }
   };
 }
 
@@ -383,6 +390,16 @@ export function readDB() {
           { id: "gmap-1", guruId: "usr-yogi", kelas: "X-1", elemen: "BK" },
           { id: "gmap-2", guruId: "usr-yogi", kelas: "X-1", elemen: "AP" }
         ];
+        changed = true;
+      }
+      if (!parsed.identitasSekolah) {
+        parsed.identitasSekolah = {
+          nama: "SMAN 1 Informatika",
+          npsn: "20103241",
+          alamat: "Jl. Core IT No. 102, Silicon Valley",
+          kepalaSekolah: "Yogi Suprayogi, S.Kom.",
+          logo: ""
+        };
         changed = true;
       }
 

@@ -15,7 +15,9 @@ import {
   CheckCircle,
   RefreshCw,
   Search,
-  BookOpen
+  BookOpen,
+  School,
+  Settings
 } from "lucide-react";
 import { User, TahunPelajaran } from "../types";
 
@@ -53,10 +55,17 @@ interface AcademicManagementViewProps {
   user: User;
 }
 
-type SubTab = "tahun" | "kalender" | "guru" | "siswa" | "rombel" | "jadwal" | "mapping";
+type SubTab = "tahun" | "kalender" | "guru" | "siswa" | "rombel" | "jadwal" | "mapping" | "identitas";
 
 export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ user }) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("tahun");
+  const [identitasForm, setIdentitasForm] = useState({
+    nama: "SMAN 1 Informatika",
+    npsn: "20103241",
+    alamat: "Jl. Core IT No. 102, Silicon Valley",
+    kepalaSekolah: "Yogi Suprayogi, S.Kom.",
+    logo: ""
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -98,13 +107,14 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
     try {
       const headers = { "x-user-role": user.role };
       
-      const [resYears, resUsers, resRombels, resJadwals, resCalendar, resMappings] = await Promise.all([
+      const [resYears, resUsers, resRombels, resJadwals, resCalendar, resMappings, resIdentitas] = await Promise.all([
         fetch("/api/tahun-pelajaran", { headers }),
         fetch("/api/users", { headers }),
         fetch("/api/academic/rombels", { headers }),
         fetch("/api/academic/jadwals", { headers }),
         fetch("/api/academic/calendar", { headers }),
-        fetch("/api/academic/mappings", { headers })
+        fetch("/api/academic/mappings", { headers }),
+        fetch("/api/academic/identitas", { headers })
       ]);
 
       if (resYears.ok) setYears(await resYears.json());
@@ -113,6 +123,12 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
       if (resJadwals.ok) setJadwals(await resJadwals.json());
       if (resCalendar.ok) setCalendarEvents(await resCalendar.json());
       if (resMappings.ok) setMappings(await resMappings.json());
+      if (resIdentitas.ok) {
+        const idData = await resIdentitas.json();
+        if (idData.success && idData.identitas) {
+          setIdentitasForm(idData.identitas);
+        }
+      }
 
     } catch (err) {
       console.error("Gagal memuat data akademik:", err);
@@ -178,6 +194,64 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
     } catch (err) {
       triggerNotification("error", "Koneksi jaringan gagal.");
     }
+  };
+
+  // ==========================================
+  // HANDLERS FOR IDENTITAS SEKOLAH
+  // ==========================================
+  const handleSaveIdentitas = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/academic/identitas", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": user.role
+        },
+        body: JSON.stringify(identitasForm)
+      });
+      
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        data = { success: false, message: `Error server (${res.status}): Format data respons tidak valid.` };
+      }
+
+      if (res.ok && data.success) {
+        triggerNotification("success", "Identitas Sekolah berhasil disimpan!");
+        setIdentitasForm(data.identitas);
+        
+        // Also trigger a custom event so that the global app state or sidebar can reactively update
+        window.dispatchEvent(new CustomEvent("identitas_updated", { detail: data.identitas }));
+      } else {
+        triggerNotification("error", data.message || "Gagal menyimpan identitas sekolah.");
+      }
+    } catch (err) {
+      triggerNotification("error", "Koneksi jaringan gagal.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      triggerNotification("error", "Ukuran berkas logo terlalu besar. Maksimum 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setIdentitasForm({ ...identitasForm, logo: event.target.result as string });
+        triggerNotification("success", "Pratinjau logo berhasil dimuat! Silakan klik 'Simpan Perubahan' di bawah untuk memperbarui.");
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   // ==========================================
@@ -488,7 +562,8 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
           { id: "siswa", label: "Daftar Siswa", icon: GraduationCap },
           { id: "rombel", label: "Rombel (Kelas)", icon: Layers },
           { id: "jadwal", label: "Jadwal Pelajaran", icon: Clock },
-          { id: "mapping", label: "Mapping Guru", icon: Map }
+          { id: "mapping", label: "Mapping Guru", icon: Map },
+          { id: "identitas", label: "Identitas Sekolah", icon: School }
         ].map((sub) => {
           const Icon = sub.icon;
           const isActive = activeSubTab === sub.id;
@@ -1456,6 +1531,163 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 8. IDENTITAS SEKOLAH */}
+      {activeSubTab === "identitas" && (
+        <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm space-y-6 animate-fade-in" id="subtab-identitas">
+          <div className="border-b border-slate-100 pb-4">
+            <h3 className="font-display font-bold text-slate-800 text-base flex items-center gap-2">
+              <School className="h-5 w-5 text-indigo-600 animate-pulse" />
+              <span>Konfigurasi Identitas Resmi Sekolah</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Atur identitas resmi sekolah untuk kop laporan, administrasi LMTMS, dan representasi visual institusi.
+            </p>
+          </div>
+
+          <form onSubmit={handleSaveIdentitas} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Logo Upload Panel */}
+            <div className="lg:col-span-1 space-y-4">
+              <span className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Logo Instansi Sekolah</span>
+              <div className="border border-dashed border-slate-300 rounded-2xl p-6 text-center bg-slate-50/50 flex flex-col items-center justify-center space-y-4 hover:bg-slate-50 transition relative min-h-[220px]">
+                {identitasForm.logo ? (
+                  <div className="relative group">
+                    <img
+                      src={identitasForm.logo}
+                      alt="Logo Sekolah"
+                      className="max-h-40 max-w-full object-contain rounded-lg shadow-sm border border-slate-200 bg-white p-2"
+                      referrerPolicy="no-referrer"
+                    />
+                    {user.role === "ADMIN" && (
+                      <button
+                        type="button"
+                        onClick={() => setIdentitasForm({ ...identitasForm, logo: "" })}
+                        className="absolute -top-2 -right-2 bg-rose-600 text-white hover:bg-rose-700 p-1 rounded-full shadow-lg transition"
+                        title="Hapus Logo"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                      <GraduationCap className="h-8 w-8 text-indigo-500" />
+                    </div>
+                    <span className="text-xs font-bold text-slate-400">Belum Ada Logo Khusus</span>
+                  </div>
+                )}
+
+                {user.role === "ADMIN" ? (
+                  <div className="w-full">
+                    <label className="block w-full py-2 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold cursor-pointer transition text-center">
+                      <span>Pilih Berkas Logo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">
+                      Format yang didukung: PNG, JPG, JPEG, SVG. Maksimum ukuran file 2MB.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-400 font-medium">
+                    Hanya Administrator yang dapat mengganti logo sekolah.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Fields Form Panel */}
+            <div className="lg:col-span-2 space-y-5">
+              <span className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Detail Informasi Sekolah</span>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Resmi Sekolah <span className="text-rose-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    disabled={user.role !== "ADMIN"}
+                    value={identitasForm.nama}
+                    onChange={(e) => setIdentitasForm({ ...identitasForm, nama: e.target.value })}
+                    placeholder="Contoh: SMA Negeri 1 Informatika"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-indigo-500 bg-white font-semibold text-slate-800 disabled:bg-slate-50 disabled:text-slate-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">NPSN (Nomor Pokok Sekolah Nasional) <span className="text-rose-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    disabled={user.role !== "ADMIN"}
+                    value={identitasForm.npsn}
+                    onChange={(e) => setIdentitasForm({ ...identitasForm, npsn: e.target.value })}
+                    placeholder="Contoh: 20103241"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-indigo-500 bg-white font-mono text-slate-800 disabled:bg-slate-50 disabled:text-slate-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Kepala Sekolah <span className="text-rose-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  disabled={user.role !== "ADMIN"}
+                  value={identitasForm.kepalaSekolah}
+                  onChange={(e) => setIdentitasForm({ ...identitasForm, kepalaSekolah: e.target.value })}
+                  placeholder="Contoh: Yogi Suprayogi, S.Kom."
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-indigo-500 bg-white text-slate-800 disabled:bg-slate-50 disabled:text-slate-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Alamat Lengkap Sekolah <span className="text-rose-500">*</span></label>
+                <textarea
+                  required
+                  disabled={user.role !== "ADMIN"}
+                  rows={3}
+                  value={identitasForm.alamat}
+                  onChange={(e) => setIdentitasForm({ ...identitasForm, alamat: e.target.value })}
+                  placeholder="Contoh: Jl. Core IT No. 102, Silicon Valley, Bandung"
+                  className="w-full border border-slate-200 rounded-xl p-3 text-xs focus:outline-indigo-500 bg-white text-slate-800 disabled:bg-slate-50 disabled:text-slate-500"
+                />
+              </div>
+
+              {user.role === "ADMIN" ? (
+                <div className="flex justify-end pt-2 border-t border-slate-100">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-100 transition disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        <span>Simpan Perubahan Identitas</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 flex items-center gap-2 text-slate-500 text-[11px]">
+                  <AlertCircle className="h-4 w-4 text-slate-400 shrink-0" />
+                  <span>Anda login sebagai Guru. Mengedit identitas sekolah hanya dapat dilakukan oleh peran Administrator.</span>
+                </div>
+              )}
+            </div>
+          </form>
         </div>
       )}
     </div>

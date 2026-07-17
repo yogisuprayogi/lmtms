@@ -92,4 +92,8 @@ router.post("/academic/mappings", enforceRole(["ADMIN"]), academicController.cre
 router.put("/academic/mappings/:id", enforceRole(["ADMIN"]), academicController.updateGuruMapping);
 router.delete("/academic/mappings/:id", enforceRole(["ADMIN"]), academicController.deleteGuruMapping);
 
+// 9. IDENTITAS SEKOLAH ROUTES (Admin only for updating)
+router.get("/academic/identitas", academicController.getIdentitasSekolah);
+router.put("/academic/identitas", enforceRole(["ADMIN"]), academicController.updateIdentitasSekolah);
+
 export default router;

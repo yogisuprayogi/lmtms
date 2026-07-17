@@ -408,3 +408,27 @@ export const deleteGuruMapping = (req: Request, res: Response) => {
 
   res.json({ success: true, message: "Pemetaan berhasil dihapus." });
 };
+
+export const getIdentitasSekolah = (req: Request, res: Response) => {
+  const db = readDB();
+  res.json({ success: true, identitas: db.identitasSekolah });
+};
+
+export const updateIdentitasSekolah = (req: Request, res: Response) => {
+  const { nama, npsn, alamat, kepalaSekolah, logo } = req.body;
+  const db = readDB();
+  
+  db.identitasSekolah = {
+    nama: nama || "SMAN 1 Informatika",
+    npsn: npsn || "20103241",
+    alamat: alamat || "Jl. Core IT No. 102, Silicon Valley",
+    kepalaSekolah: kepalaSekolah || "Yogi Suprayogi, S.Kom.",
+    logo: logo !== undefined ? logo : (db.identitasSekolah?.logo || "")
+  };
+  
+  writeDB(db);
+  
+  addActivityLog("usr-admin", "Administrator LMTMS", "ADMIN", "UPDATE_IDENTITAS_SEKOLAH", `Memperbarui Identitas Sekolah: ${db.identitasSekolah.nama}`, req.ip);
+  
+  res.json({ success: true, identitas: db.identitasSekolah });
+};

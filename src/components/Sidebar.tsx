@@ -34,6 +34,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen = false,
   onClose
 }) => {
+  const [identitas, setIdentitas] = React.useState({
+    nama: "SMAN 1 Informatika",
+    logo: ""
+  });
+
+  React.useEffect(() => {
+    // Fetch initial identity
+    fetch("/api/academic/identitas")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.identitas) {
+          setIdentitas(data.identitas);
+        }
+      })
+      .catch((err) => console.error("Error loading identitas inside sidebar:", err));
+
+    // Listen to updates
+    const handleUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setIdentitas(customEvent.detail);
+      }
+    };
+    window.addEventListener("identitas_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("identitas_updated", handleUpdate);
+    };
+  }, []);
+
   const changeTab = (tab: any) => {
     setCurrentTab(tab);
     if (setSelectedDoc) {
@@ -49,13 +78,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div>
         {/* Logo Brand */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between" id="brand-logo-container">
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center font-bold">
-              <GraduationCap className="h-6 w-6" />
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="flex items-center justify-center font-bold overflow-hidden shrink-0 h-10 w-10 bg-indigo-600 text-white rounded-lg p-1.5">
+              {identitas.logo ? (
+                <img
+                  src={identitas.logo}
+                  alt="School Logo"
+                  className="h-full w-full object-contain"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <GraduationCap className="h-6 w-6" />
+              )}
             </div>
-            <div>
-              <h1 className="text-white font-display font-bold text-lg leading-none">LMTMS</h1>
-              <p className="text-[10px] text-slate-400 tracking-wider">Informatika SMA</p>
+            <div className="overflow-hidden">
+              <h1 className="text-white font-display font-bold text-sm leading-tight truncate" title={identitas.nama}>
+                {identitas.nama}
+              </h1>
+              <p className="text-[9px] text-slate-400 tracking-wider">LMTMS • Portal Guru</p>
             </div>
           </div>
           {/* Close button for mobile */}
