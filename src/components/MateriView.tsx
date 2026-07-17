@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Trash2, ChevronLeft, ChevronRight, BookOpen, AlertCircle, PenTool, Globe, FileText, FileSpreadsheet, Presentation, Video, Music, Image, File } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, BookOpen, AlertCircle, PenTool, Globe, FileText, FileSpreadsheet, Presentation, Video, Music, Image, File, Search, X, SlidersHorizontal } from "lucide-react";
 import { User, Materi, ELEMEN_INFORMATIKA } from "../types";
 
 export const getMateriIcon = (m: Materi) => {
@@ -160,6 +160,21 @@ export const MateriView: React.FC<MateriViewProps> = ({
   const [errorMsg, setErrorMsg] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  // States for filtering
+  const [filterElemen, setFilterElemen] = useState<string>("SEMUA");
+  const [filterKelas, setFilterKelas] = useState<string>("SEMUA");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
+  const filteredMateriList = materiList.filter((m) => {
+    const matchElemen = filterElemen === "SEMUA" || m.elemen === filterElemen;
+    const matchKelas = filterKelas === "SEMUA" || m.kelas === filterKelas;
+    const matchSearch =
+      searchQuery.trim() === "" ||
+      m.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.deskripsi.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchElemen && matchKelas && matchSearch;
+  });
 
   const selectedMeta = selectedMateri ? getMateriIcon(selectedMateri) : null;
   const SelectedIcon = selectedMeta ? selectedMeta.Icon : BookOpen;
@@ -730,74 +745,228 @@ export const MateriView: React.FC<MateriViewProps> = ({
           </div>
         </div>
       ) : (
-        // Grid daftar materi
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {materiList.length === 0 ? (
-            <div className="col-span-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center flex flex-col items-center justify-center min-h-[250px]">
-              <BookOpen className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
-              <p className="text-slate-500 dark:text-slate-400 text-xs">Belum ada materi pembelajaran yang diterbitkan.</p>
-            </div>
-          ) : (
-            materiList.map((m) => {
-              const meta = getMateriIcon(m);
-              const IconComp = meta.Icon;
-              return (
-                <div
-                  key={m.id}
-                  className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-bold font-mono bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-150/40 uppercase">
-                        {m.elemen}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 ${meta.bgColor} ${meta.color} ${meta.borderColor}`}>
-                          <IconComp className="h-3 w-3 shrink-0" />
-                          <span>{meta.label}</span>
-                        </span>
-                        <span className="text-xs text-slate-400 font-semibold">Kelas {m.kelas}</span>
-                      </span>
-                    </div>
+        // Daftar materi dengan filter
+        <div className="space-y-6">
+          {/* Menu Filter */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+              {/* Search bar */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari materi berdasarkan judul atau deskripsi..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-indigo-500 text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
 
-                    <div className="flex items-start gap-3 mt-4">
-                      <div className={`p-2.5 rounded-xl shrink-0 border ${meta.bgColor} ${meta.color} ${meta.borderColor} shadow-sm`}>
-                        <IconComp className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-display font-bold text-slate-900 dark:text-white text-sm line-clamp-2 leading-snug" title={m.judul}>
-                          {m.judul}
-                        </h3>
-                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-1.5 line-clamp-2 leading-relaxed">
-                          {m.deskripsi}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                    <button
-                      onClick={() => setSelectedMateri(m)}
-                      className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-0.5 transition"
-                    >
-                      <span>Buka Materi</span>
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-
-                    {user.role === "GURU" && (
+              {/* Dropdowns / Buttons for Kelas & Reset */}
+              <div className="flex flex-wrap items-center gap-4">
+                {/* Filter Kelas */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    <span>Kelas:</span>
+                  </span>
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                    {["SEMUA", "X", "XI", "XII"].map((kls) => (
                       <button
-                        onClick={() => handleDeleteMateri(m.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1 transition"
-                        title="Hapus Materi"
+                        key={kls}
+                        type="button"
+                        onClick={() => setFilterKelas(kls)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          filterKelas === kls
+                            ? "bg-indigo-600 text-white shadow-sm"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                        }`}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {kls === "SEMUA" ? "Semua" : `Kelas ${kls}`}
                       </button>
-                    )}
+                    ))}
                   </div>
                 </div>
-              );
-            })
-          )}
+
+                {/* Clear Filter Button */}
+                {(filterElemen !== "SEMUA" || filterKelas !== "SEMUA" || searchQuery !== "") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterElemen("SEMUA");
+                      setFilterKelas("SEMUA");
+                      setSearchQuery("");
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 border border-rose-200 dark:border-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl text-xs font-bold transition"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    <span>Hapus Filter</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Filter Elemen Informatika (Quick Badges) */}
+            <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Elemen Kurikulum Merdeka:</span>
+                {filterElemen !== "SEMUA" && (
+                  <button
+                    onClick={() => setFilterElemen("SEMUA")}
+                    className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    Tampilkan Semua Elemen
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFilterElemen("SEMUA")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                    filterElemen === "SEMUA"
+                      ? "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400"
+                      : "bg-slate-50/50 dark:bg-slate-800/30 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                  }`}
+                >
+                  Semua Elemen
+                </button>
+                {ELEMEN_INFORMATIKA.map((el) => {
+                  const isActive = filterElemen === el.kode;
+                  const countInElemen = materiList.filter((m) => m.elemen === el.kode).length;
+                  return (
+                    <button
+                      key={el.kode}
+                      type="button"
+                      onClick={() => setFilterElemen(el.kode)}
+                      title={`${el.kode} - ${el.nama}`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                        isActive
+                          ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                          : "bg-slate-50/50 dark:bg-slate-800/30 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                      }`}
+                    >
+                      <span className={`text-[10px] uppercase font-mono ${isActive ? "text-indigo-200" : "text-slate-400"}`}>
+                        {el.kode}
+                      </span>
+                      <span>{el.nama}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-indigo-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
+                        {countInElemen}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Result statistics */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-400 font-semibold px-1">
+            <div>
+              Menampilkan <span className="text-slate-700 dark:text-slate-300 font-bold">{filteredMateriList.length}</span> dari <span className="text-slate-700 dark:text-slate-300 font-bold">{materiList.length}</span> materi pembelajaran
+            </div>
+            {(filterElemen !== "SEMUA" || filterKelas !== "SEMUA" || searchQuery !== "") && (
+              <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/20 px-2.5 py-1 rounded-lg border border-indigo-100 dark:border-indigo-900/30">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse" />
+                <span>
+                  Filter aktif: {[
+                    filterElemen !== "SEMUA" ? `Elemen ${filterElemen}` : null,
+                    filterKelas !== "SEMUA" ? `Kelas ${filterKelas}` : null,
+                    searchQuery ? `Kata kunci "${searchQuery}"` : null
+                  ].filter(Boolean).join(" + ")}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Grid daftar materi */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredMateriList.length === 0 ? (
+              <div className="col-span-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center flex flex-col items-center justify-center min-h-[250px]">
+                <BookOpen className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
+                <p className="text-slate-700 dark:text-slate-300 font-bold text-sm">Tidak ada materi yang cocok</p>
+                <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 max-w-sm">Coba atur ulang filter elemen, tingkat kelas, atau kata kunci pencarian Anda untuk melihat modul belajar lainnya.</p>
+                <button
+                  onClick={() => {
+                    setFilterElemen("SEMUA");
+                    setFilterKelas("SEMUA");
+                    setSearchQuery("");
+                  }}
+                  className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+                >
+                  Atur Ulang Filter
+                </button>
+              </div>
+            ) : (
+              filteredMateriList.map((m) => {
+                const meta = getMateriIcon(m);
+                const IconComp = meta.Icon;
+                return (
+                  <div
+                    key={m.id}
+                    className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold font-mono bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-150/40 uppercase">
+                          {m.elemen}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 ${meta.bgColor} ${meta.color} ${meta.borderColor}`}>
+                            <IconComp className="h-3 w-3 shrink-0" />
+                            <span>{meta.label}</span>
+                          </span>
+                          <span className="text-xs text-slate-400 font-semibold">Kelas {m.kelas}</span>
+                        </span>
+                      </div>
+
+                      <div className="flex items-start gap-3 mt-4">
+                        <div className={`p-2.5 rounded-xl shrink-0 border ${meta.bgColor} ${meta.color} ${meta.borderColor} shadow-sm`}>
+                          <IconComp className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-display font-bold text-slate-900 dark:text-white text-sm line-clamp-2 leading-snug" title={m.judul}>
+                            {m.judul}
+                          </h3>
+                          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1.5 line-clamp-2 leading-relaxed">
+                            {m.deskripsi}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                      <button
+                        onClick={() => setSelectedMateri(m)}
+                        className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-0.5 transition"
+                      >
+                        <span>Buka Materi</span>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+
+                      {user.role === "GURU" && (
+                        <button
+                          onClick={() => handleDeleteMateri(m.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1 transition"
+                          title="Hapus Materi"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>
