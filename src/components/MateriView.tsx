@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Trash2, ChevronLeft, ChevronRight, BookOpen, AlertCircle, PenTool, Globe, FileText, FileSpreadsheet, Presentation, Video, Music, Image, File, Search, X, SlidersHorizontal } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, BookOpen, AlertCircle, PenTool, Globe, FileText, FileSpreadsheet, Presentation, Video, Music, Image, File, Search, X, SlidersHorizontal, Bold, Italic, List } from "lucide-react";
 import { User, Materi, ELEMEN_INFORMATIKA } from "../types";
 
 export const getMateriIcon = (m: Materi) => {
@@ -160,6 +160,61 @@ export const MateriView: React.FC<MateriViewProps> = ({
   const [errorMsg, setErrorMsg] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  const handleFormatText = (
+    elementId: string,
+    type: "bold" | "italic" | "bullet",
+    currentValue: string,
+    setValueCallback: (val: string) => void
+  ) => {
+    const textarea = document.getElementById(elementId) as HTMLTextAreaElement | null;
+    if (!textarea) {
+      if (type === "bold") setValueCallback(currentValue + " **teks tebal**");
+      else if (type === "italic") setValueCallback(currentValue + " *teks miring*");
+      else if (type === "bullet") setValueCallback(currentValue + "\n- butir baru");
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = currentValue.substring(start, end);
+
+    let formatted = "";
+    let cursorOffset = 0;
+
+    if (type === "bold") {
+      formatted = `**${selectedText || "teks tebal"}**`;
+      cursorOffset = selectedText ? formatted.length : 2;
+    } else if (type === "italic") {
+      formatted = `*${selectedText || "teks miring"}*`;
+      cursorOffset = selectedText ? formatted.length : 1;
+    } else if (type === "bullet") {
+      if (selectedText.includes("\n")) {
+        formatted = selectedText
+          .split("\n")
+          .map((line) => (line.trim().startsWith("-") ? line : `- ${line}`))
+          .join("\n");
+        cursorOffset = formatted.length;
+      } else {
+        formatted = `\n- ${selectedText || "butir baru"}`;
+        cursorOffset = selectedText ? formatted.length : 3;
+      }
+    }
+
+    const newValue = currentValue.substring(0, start) + formatted + currentValue.substring(end);
+    setValueCallback(newValue);
+
+    setTimeout(() => {
+      textarea.focus();
+      if (selectedText) {
+        textarea.setSelectionRange(start, start + formatted.length);
+      } else {
+        const selectionPos = start + cursorOffset;
+        const textToSelectLength = type === "bold" ? 10 : type === "italic" ? 11 : 10;
+        textarea.setSelectionRange(selectionPos, selectionPos + textToSelectLength);
+      }
+    }, 50);
+  };
 
   // States for filtering
   const [filterElemen, setFilterElemen] = useState<string>("SEMUA");
@@ -500,12 +555,46 @@ export const MateriView: React.FC<MateriViewProps> = ({
             {materiForm.tipe === "TEKS" && (
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Isi Materi Pembelajaran (Format Markdown)</label>
+                
+                {/* TOOLBAR FORMAT TEKS */}
+                <div className="flex items-center gap-1.5 p-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-t-lg text-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleFormatText("materi-content-textarea", "bold", materiForm.konten, (val) => setMateriForm({ ...materiForm, konten: val }))}
+                    className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 font-bold"
+                    title="Tebalkan Teks (Bold)"
+                  >
+                    <Bold className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFormatText("materi-content-textarea", "italic", materiForm.konten, (val) => setMateriForm({ ...materiForm, konten: val }))}
+                    className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 italic"
+                    title="Miringkan Teks (Italic)"
+                  >
+                    <Italic className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFormatText("materi-content-textarea", "bullet", materiForm.konten, (val) => setMateriForm({ ...materiForm, konten: val }))}
+                    className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1"
+                    title="Daftar Bulatan (Bullet Points)"
+                  >
+                    <List className="h-3.5 w-3.5" />
+                  </button>
+                  <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
+                  <span className="text-[10px] text-slate-400 font-medium select-none uppercase tracking-wider px-1">
+                    Format Markdown
+                  </span>
+                </div>
+
                 <textarea
+                  id="materi-content-textarea"
                   required
                   value={materiForm.konten}
                   onChange={(e) => setMateriForm({ ...materiForm, konten: e.target.value })}
                   placeholder="Tulis materi lengkap di sini..."
-                  className="block w-full border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm focus:outline-indigo-500 font-mono h-[300px] dark:bg-slate-800 dark:text-slate-100"
+                  className="block w-full border border-t-0 border-slate-200 dark:border-slate-700 rounded-b-lg p-3 text-sm focus:outline-indigo-500 font-mono h-[300px] dark:bg-slate-800 dark:text-slate-100"
                 />
               </div>
             )}

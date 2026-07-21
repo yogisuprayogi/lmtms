@@ -216,17 +216,82 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<string>("deep_learning");
 
   // State Management for individual sub-views
-  const [atpList, setAtpList] = useState(MOCK_ATP);
-  const [modulList, setModulList] = useState(MOCK_MODUL);
-  const [kktpList, setKktpList] = useState(MOCK_KKTP);
-  const [protaList, setProtaList] = useState(MOCK_PROTA);
-  const [versions, setVersions] = useState(MOCK_VERSIONING);
+  const [atpList, setAtpList] = useState(() => {
+    const saved = localStorage.getItem("lms_atp_list");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return MOCK_ATP;
+  });
+
+  const [modulList, setModulList] = useState(() => {
+    const saved = localStorage.getItem("lms_modul_list");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return MOCK_MODUL;
+  });
+
+  const [kktpList, setKktpList] = useState(() => {
+    const saved = localStorage.getItem("lms_kktp_list");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return MOCK_KKTP;
+  });
+
+  const [protaList, setProtaList] = useState(() => {
+    const saved = localStorage.getItem("lms_prota_list");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return MOCK_PROTA;
+  });
+
+  const [versions, setVersions] = useState(() => {
+    const saved = localStorage.getItem("lms_versions");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return MOCK_VERSIONING;
+  });
+
   const [selectedVersion, setSelectedVersion] = useState<any | null>(null);
 
   // CP Management States & Actions
-  const [cpList, setCpList] = useState(() =>
-    MOCK_CP.map((cp, idx) => ({ ...cp, id: `cp-${idx + 1}` }))
-  );
+  const [cpList, setCpList] = useState<any[]>(() => {
+    const saved = localStorage.getItem("lms_cp_list");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return MOCK_CP.map((cp, idx) => ({ ...cp, id: `cp-${idx + 1}` }));
+  });
+
+  // Persist modifications to localStorage to guarantee data survival on refresh
+  useEffect(() => {
+    localStorage.setItem("lms_atp_list", JSON.stringify(atpList));
+  }, [atpList]);
+
+  useEffect(() => {
+    localStorage.setItem("lms_modul_list", JSON.stringify(modulList));
+  }, [modulList]);
+
+  useEffect(() => {
+    localStorage.setItem("lms_kktp_list", JSON.stringify(kktpList));
+  }, [kktpList]);
+
+  useEffect(() => {
+    localStorage.setItem("lms_prota_list", JSON.stringify(protaList));
+  }, [protaList]);
+
+  useEffect(() => {
+    localStorage.setItem("lms_versions", JSON.stringify(versions));
+  }, [versions]);
+
+  useEffect(() => {
+    localStorage.setItem("lms_cp_list", JSON.stringify(cpList));
+  }, [cpList]);
+
   const [isEditingCpId, setIsEditingCpId] = useState<string | null>(null);
   const [isAddingCp, setIsAddingCp] = useState(false);
   const [cpForm, setCpForm] = useState({

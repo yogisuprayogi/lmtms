@@ -27,7 +27,10 @@ import {
   Save,
   CheckCircle,
   AlertCircle,
-  Smartphone
+  Smartphone,
+  Bold,
+  Italic,
+  List
 } from "lucide-react";
 import {
   BarChart,
@@ -83,6 +86,7 @@ export default function App() {
   const [perangkatDocs, setPerangkatDocs] = useState<any[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
   const [isCreatingDoc, setIsCreatingDoc] = useState(false);
+  const [expandedDocId, setExpandedDocId] = useState<string | null>(null);
   const [docForm, setDocForm] = useState({
     judul: "",
     jenis: "MODUL_AJAR",
@@ -180,6 +184,8 @@ export default function App() {
   });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState<any[]>([]);
+  const [showDeadlinePopup, setShowDeadlinePopup] = useState(false);
+  const [hasShownDeadlinePopup, setHasShownDeadlinePopup] = useState(false);
   const [offlineQueue, setOfflineQueue] = useState<any[]>(() => {
     const stored = localStorage.getItem("lmtms_offline_queue");
     return stored ? JSON.parse(stored) : [];
@@ -400,6 +406,30 @@ export default function App() {
     fetchMateriList();
     fetchTugasList();
   }, [user]);
+
+  // Auto-trigger deadline notification popup once when data is loaded and user is authenticated
+  useEffect(() => {
+    if (user && !hasShownDeadlinePopup && (tugasList.length > 0 || submissions.length > 0)) {
+      let hasPending = false;
+      if (user.role === "SISWA") {
+        const pendingCount = tugasList.filter((t) => {
+          const hasSubmitted = submissions.some(
+            (s) => s.tugasId === t.id && s.siswaId === user.id
+          );
+          return !hasSubmitted;
+        }).length;
+        if (pendingCount > 0) hasPending = true;
+      } else {
+        const pendingCount = submissions.filter((s) => s.status === "BELUM_DINILAI").length;
+        if (pendingCount > 0) hasPending = true;
+      }
+
+      if (hasPending) {
+        setShowDeadlinePopup(true);
+        setHasShownDeadlinePopup(true);
+      }
+    }
+  }, [tugasList, submissions, user, hasShownDeadlinePopup]);
 
   // Handle Absensi form load when class or date changes
   useEffect(() => {
@@ -1018,6 +1048,61 @@ export default function App() {
     });
   };
 
+  const handleFormatText = (
+    elementId: string,
+    type: "bold" | "italic" | "bullet",
+    currentValue: string,
+    setValueCallback: (val: string) => void
+  ) => {
+    const textarea = document.getElementById(elementId) as HTMLTextAreaElement | null;
+    if (!textarea) {
+      if (type === "bold") setValueCallback(currentValue + " **teks tebal**");
+      else if (type === "italic") setValueCallback(currentValue + " *teks miring*");
+      else if (type === "bullet") setValueCallback(currentValue + "\n- butir baru");
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = currentValue.substring(start, end);
+
+    let formatted = "";
+    let cursorOffset = 0;
+
+    if (type === "bold") {
+      formatted = `**${selectedText || "teks tebal"}**`;
+      cursorOffset = selectedText ? formatted.length : 2;
+    } else if (type === "italic") {
+      formatted = `*${selectedText || "teks miring"}*`;
+      cursorOffset = selectedText ? formatted.length : 1;
+    } else if (type === "bullet") {
+      if (selectedText.includes("\n")) {
+        formatted = selectedText
+          .split("\n")
+          .map((line) => (line.trim().startsWith("-") ? line : `- ${line}`))
+          .join("\n");
+        cursorOffset = formatted.length;
+      } else {
+        formatted = `\n- ${selectedText || "butir baru"}`;
+        cursorOffset = selectedText ? formatted.length : 3;
+      }
+    }
+
+    const newValue = currentValue.substring(0, start) + formatted + currentValue.substring(end);
+    setValueCallback(newValue);
+
+    setTimeout(() => {
+      textarea.focus();
+      if (selectedText) {
+        textarea.setSelectionRange(start, start + formatted.length);
+      } else {
+        const selectionPos = start + cursorOffset;
+        const textToSelectLength = type === "bold" ? 10 : type === "italic" ? 11 : 10;
+        textarea.setSelectionRange(selectionPos, selectionPos + textToSelectLength);
+      }
+    }, 50);
+  };
+
   // Render Login Screen jika belum login
   if (!user) {
     return (
@@ -1045,6 +1130,8 @@ export default function App() {
         setSelectedDoc={setSelectedDoc}
         isOpen={mobileSidebarOpen}
         onClose={() => setMobileSidebarOpen(false)}
+        tugasList={tugasList}
+        submissions={submissions}
       />
 
       {/* MAIN CONTAINER */}
@@ -1118,68 +1205,190 @@ export default function App() {
           {currentTab === "perangkat" && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Sidebar Dokumen */}
-              <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col h-[650px] no-print">
+              <div className={`lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col h-[650px] no-print ${
+                selectedDoc || isCreatingDoc ? "hidden lg:flex" : "flex"
+              }`}>
                 <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-                  <h3 className="font-display font-bold text-slate-800">Administrasi Guru</h3>
+                  <div className="space-y-0.5">
+                    <h3 className="font-display font-bold text-slate-800 text-sm sm:text-base">Administrasi Guru</h3>
+                    <p className="text-[10px] text-slate-400 font-medium">Ketuk kartu untuk detail singkat</p>
+                  </div>
                   <button
                     onClick={() => { setIsCreatingDoc(true); setSelectedDoc(null); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition"
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm hover:shadow active:scale-95 transition"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     <span>Buat Baru</span>
                   </button>
                 </div>
 
-                {/* List Perangkat */}
-                <div className="flex-1 overflow-y-auto space-y-2">
+                {/* List Perangkat dengan Expandable Cards */}
+                <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin">
                   {perangkatDocs.length === 0 ? (
                     <p className="text-xs text-slate-400 text-center py-8">Belum ada dokumen perangkat pembelajaran.</p>
                   ) : (
-                    perangkatDocs.map((doc) => (
-                      <div
-                        key={doc.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => { setSelectedDoc(doc); setIsCreatingDoc(false); }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            setSelectedDoc(doc);
-                            setIsCreatingDoc(false);
-                          }
-                        }}
-                        className={`w-full text-left p-3.5 rounded-xl border transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-                          selectedDoc?.id === doc.id
-                            ? "bg-blue-50/80 border-blue-200 shadow-sm"
-                            : "bg-white border-slate-100 hover:bg-slate-50"
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded uppercase font-bold">
-                            {doc.jenis.replace("_", " ")}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono">Kelas {doc.kelas}</span>
-                        </div>
-                        <h4 className="font-display font-bold text-sm text-slate-800 mt-2 truncate">{doc.judul}</h4>
-                        <div className="flex justify-between items-center mt-3 text-xs text-slate-400">
-                          <span>Elemen: {doc.elemen}</span>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDeletePerangkat(doc.id); }}
-                            className="text-slate-400 hover:text-red-500 transition focus:outline-none p-1 rounded-md"
+                    perangkatDocs.map((doc) => {
+                      const isExpanded = expandedDocId === doc.id;
+                      return (
+                        <div
+                          key={doc.id}
+                          className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 ${
+                            selectedDoc?.id === doc.id
+                              ? "bg-blue-50/80 border-blue-300 shadow-sm"
+                              : "bg-white border-slate-150 hover:bg-slate-50/70"
+                          }`}
+                        >
+                          {/* Upper row: Badges and Expand toggle */}
+                          <div className="flex justify-between items-center gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[9px] font-mono bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg uppercase font-bold tracking-wider">
+                                {doc.jenis.replace("_", " ")}
+                              </span>
+                              <span className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg font-bold font-mono">
+                                Kelas {doc.kelas}
+                              </span>
+                            </div>
+                            
+                            {/* Thumb-friendly Inline Expand Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedDocId(isExpanded ? null : doc.id);
+                              }}
+                              className="p-2 -mr-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-90"
+                              aria-label={isExpanded ? "Sembunyikan detail" : "Tampilkan detail"}
+                            >
+                              <ChevronDown className={`h-4.5 w-4.5 text-slate-500 transition-transform duration-200 ${isExpanded ? "transform rotate-180 text-blue-600" : ""}`} />
+                            </button>
+                          </div>
+
+                          {/* Card Content Tappable Header */}
+                          <div
+                            onClick={() => {
+                              // On mobile, tap toggles expansion to view details without moving screen.
+                              // On desktop, it selects the document to display on the side editor.
+                              if (window.innerWidth < 1024) {
+                                setExpandedDocId(isExpanded ? null : doc.id);
+                              } else {
+                                setSelectedDoc(doc);
+                                setIsCreatingDoc(false);
+                              }
+                            }}
+                            className="cursor-pointer mt-2 space-y-1.5"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                            <h4 className="font-display font-bold text-sm text-slate-800 leading-snug">
+                              {doc.judul}
+                            </h4>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+                              <span>Elemen: <span className="text-slate-600 font-semibold">{doc.elemen}</span></span>
+                            </div>
+                          </div>
+
+                          {/* Expanded Content Area (Inline Preview & Quick Actions) */}
+                          {isExpanded && (
+                            <div className="mt-4 pt-3.5 border-t border-slate-100 space-y-3.5 animate-fade-in">
+                              {/* Metadata & Stats Grid */}
+                              <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500 font-semibold font-mono bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
+                                <div>
+                                  <span className="text-slate-400 block uppercase tracking-wider text-[8px] mb-0.5">Jumlah Karakter</span>
+                                  <span className="text-slate-700">{doc.konten ? doc.konten.length : 0} Karakter</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 block uppercase tracking-wider text-[8px] mb-0.5">Saran Waktu Baca</span>
+                                  <span className="text-slate-700">{Math.ceil((doc.konten ? doc.konten.length : 0) / 800)} Menit</span>
+                                </div>
+                              </div>
+
+                              {/* Truncated scrollable Markdown Content Preview */}
+                              <div className="bg-slate-50/30 border border-slate-100 p-3 rounded-xl max-h-[180px] overflow-y-auto text-xs text-slate-600 leading-relaxed font-sans scrollbar-thin relative">
+                                <div className="prose prose-xs text-slate-600 max-w-none">
+                                  {formatMarkdown(doc.konten || "*Tidak ada konten*")}
+                                </div>
+                              </div>
+
+                              {/* Thumb-friendly Action Grid */}
+                              <div className="grid grid-cols-3 gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedDoc(doc);
+                                    setIsCreatingDoc(false);
+                                  }}
+                                  className="flex items-center justify-center gap-1.5 py-2 px-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-bold transition shadow-xs active:scale-95"
+                                >
+                                  <Edit2 className="h-3.5 w-3.5" />
+                                  <span>Buka Detail</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedDoc(doc);
+                                    setTimeout(() => window.print(), 150);
+                                  }}
+                                  className="flex items-center justify-center gap-1.5 py-2 px-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-[11px] font-bold transition active:scale-95"
+                                >
+                                  <Printer className="h-3.5 w-3.5" />
+                                  <span>Cetak</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleDeletePerangkat(doc.id);
+                                  }}
+                                  className="flex items-center justify-center gap-1.5 py-2 px-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 rounded-xl text-[11px] font-bold transition active:scale-95"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span>Hapus</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Collapse view footers when NOT expanded */}
+                          {!isExpanded && (
+                            <div className="flex justify-between items-center mt-3 pt-2.5 border-t border-slate-100 text-[11px] text-slate-400 font-medium">
+                              <span className="font-mono text-[9px] uppercase font-bold tracking-wider text-slate-400/80">
+                                Ketuk untuk expand
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedDoc(doc);
+                                  setIsCreatingDoc(false);
+                                }}
+                                className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-0.5 focus:outline-none"
+                              >
+                                <span>Buka</span>
+                                <ChevronRight className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
 
               {/* Viewer & Editor */}
-              <div className="lg:col-span-8 flex flex-col h-[650px]">
+              <div className={`lg:col-span-8 flex flex-col h-[650px] ${
+                selectedDoc || isCreatingDoc ? "flex" : "hidden lg:flex"
+              }`}>
                 {isCreatingDoc ? (
                   // Form pembuatan dokumen baru dengan bantuan AI
                   <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col h-full overflow-y-auto">
+                    {/* Back button for mobile devices */}
+                    <button
+                      type="button"
+                      onClick={() => { setIsCreatingDoc(false); setSelectedDoc(null); }}
+                      className="lg:hidden self-start flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl mb-4 transition"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span>Kembali ke Daftar</span>
+                    </button>
+
                     <h3 className="font-display font-bold text-lg text-slate-800 mb-4">
                       Rancang Perangkat Pembelajaran Baru
                     </h3>
@@ -1280,12 +1489,46 @@ export default function App() {
 
                       <div className="flex-1 min-h-[220px] flex flex-col">
                         <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Isi Dokumen (Format Markdown)</label>
+                        
+                        {/* TOOLBAR FORMAT TEKS */}
+                        <div className="flex items-center gap-1.5 p-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-t-lg text-xs">
+                          <button
+                            type="button"
+                            onClick={() => handleFormatText("doc-content-textarea-create", "bold", docForm.konten, (val) => setDocForm({ ...docForm, konten: val }))}
+                            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 font-bold"
+                            title="Tebalkan Teks (Bold)"
+                          >
+                            <Bold className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleFormatText("doc-content-textarea-create", "italic", docForm.konten, (val) => setDocForm({ ...docForm, konten: val }))}
+                            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 italic"
+                            title="Miringkan Teks (Italic)"
+                          >
+                            <Italic className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleFormatText("doc-content-textarea-create", "bullet", docForm.konten, (val) => setDocForm({ ...docForm, konten: val }))}
+                            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1"
+                            title="Daftar Bulatan (Bullet Points)"
+                          >
+                            <List className="h-3.5 w-3.5" />
+                          </button>
+                          <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
+                          <span className="text-[10px] text-slate-400 font-medium select-none uppercase tracking-wider px-1">
+                            Format Markdown
+                          </span>
+                        </div>
+
                         <textarea
+                          id="doc-content-textarea-create"
                           required
                           value={docForm.konten}
                           onChange={(e) => setDocForm({ ...docForm, konten: e.target.value })}
                           placeholder="Tulis isi draf secara detail atau gunakan generator AI di atas..."
-                          className="flex-1 block w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-blue-500 font-mono resize-none h-[220px]"
+                          className="flex-1 block w-full border border-t-0 border-slate-200 rounded-b-lg p-3 text-sm focus:outline-blue-500 font-mono resize-none h-[220px]"
                         />
                       </div>
 
@@ -1310,12 +1553,21 @@ export default function App() {
                   // Viewer & Editor Perangkat Terpilih
                   <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden print-card">
                     {/* Header Doc Viewer */}
-                    <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between no-print">
+                    <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between no-print gap-2">
                       <div className="flex items-center gap-2">
+                        {/* Mobile back button */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDoc(null)}
+                          className="lg:hidden p-2 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl transition"
+                          title="Kembali ke Daftar"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
                         <span className="text-xs font-bold font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded uppercase">
                           {selectedDoc.jenis.replace("_", " ")}
                         </span>
-                        <span className="text-xs text-slate-400">Kelas {selectedDoc.kelas}</span>
+                        <span className="text-xs text-slate-400 hidden sm:inline">Kelas {selectedDoc.kelas}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -1347,12 +1599,46 @@ export default function App() {
                             type="text"
                             value={selectedDoc.judul}
                             onChange={(e) => setSelectedDoc({ ...selectedDoc, judul: e.target.value })}
-                            className="font-bold text-base text-slate-800 border-b border-slate-200 pb-2 focus:outline-none focus:border-blue-500 mb-4"
+                            className="font-bold text-base text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700 pb-2 focus:outline-none focus:border-blue-500 mb-4 bg-transparent"
                           />
+                          
+                          {/* TOOLBAR FORMAT TEKS */}
+                          <div className="flex items-center gap-1.5 p-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-xs mb-3">
+                            <button
+                              type="button"
+                              onClick={() => handleFormatText("doc-content-textarea-edit", "bold", selectedDoc.konten, (val) => setSelectedDoc({ ...selectedDoc, konten: val }))}
+                              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 font-bold"
+                              title="Tebalkan Teks (Bold)"
+                            >
+                              <Bold className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleFormatText("doc-content-textarea-edit", "italic", selectedDoc.konten, (val) => setSelectedDoc({ ...selectedDoc, konten: val }))}
+                              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 italic"
+                              title="Miringkan Teks (Italic)"
+                            >
+                              <Italic className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleFormatText("doc-content-textarea-edit", "bullet", selectedDoc.konten, (val) => setSelectedDoc({ ...selectedDoc, konten: val }))}
+                              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1"
+                              title="Daftar Bulatan (Bullet Points)"
+                            >
+                              <List className="h-3.5 w-3.5" />
+                            </button>
+                            <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
+                            <span className="text-[10px] text-slate-400 font-medium select-none uppercase tracking-wider px-1">
+                              Format Markdown
+                            </span>
+                          </div>
+
                           <textarea
+                            id="doc-content-textarea-edit"
                             value={selectedDoc.konten}
                             onChange={(e) => setSelectedDoc({ ...selectedDoc, konten: e.target.value })}
-                            className="flex-1 w-full p-2 text-xs font-mono focus:outline-none resize-none"
+                            className="flex-1 w-full p-2 text-xs font-mono focus:outline-none resize-none dark:bg-slate-900 dark:text-slate-100"
                           />
                         </div>
                       </div>
@@ -1581,6 +1867,156 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {/* MODAL POPUP: NOTIFIKASI TENGGAT WAKTU TUGAS (DEADLINE ALERT) */}
+      {showDeadlinePopup && user && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs no-print animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 max-w-md w-full shadow-2xl space-y-4 relative">
+            <button
+              onClick={() => setShowDeadlinePopup(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold transition font-mono text-sm"
+              id="close-deadline-popup-x"
+            >
+              ✕
+            </button>
+            
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl border border-rose-100 dark:border-rose-900/40">
+                <Clock className="h-6 w-6 animate-pulse" />
+              </div>
+              <div>
+                <h4 className="font-display font-black text-slate-900 dark:text-white text-sm tracking-wide uppercase">
+                  {user.role === "SISWA" ? "Pengingat Batas Waktu Tugas" : "Pemberitahuan Antrean Nilai"}
+                </h4>
+                <p className="text-[10px] text-slate-400 font-mono italic">
+                  Sistem Pemantauan Capaian Akademik LMTMS
+                </p>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-3">
+              {user.role === "SISWA" ? (
+                <>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Hai <strong className="text-indigo-600 dark:text-indigo-400">{user.nama}</strong>, Anda memiliki beberapa penugasan aktif yang belum dikerjakan. Segera selesaikan sebelum tenggat waktu berakhir:
+                  </p>
+                  
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                    {tugasList
+                      .filter((t) => {
+                        const hasSubmitted = submissions.some(
+                          (s) => s.tugasId === t.id && s.siswaId === user.id
+                        );
+                        return !hasSubmitted;
+                      })
+                      .map((t) => {
+                        const remaining = (() => {
+                          if (!t.deadline) return { text: "Tanpa batas", style: "bg-slate-100 text-slate-600" };
+                          const today = new Date();
+                          today.setHours(0,0,0,0);
+                          const deadline = new Date(t.deadline);
+                          deadline.setHours(0,0,0,0);
+                          const diffTime = deadline.getTime() - today.getTime();
+                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                          if (diffDays < 0) {
+                            return { text: `Terlewat ${Math.abs(diffDays)} hari`, style: "bg-rose-50 text-rose-700 border border-rose-100 font-bold dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/40" };
+                          } else if (diffDays === 0) {
+                            return { text: "Hari Ini!", style: "bg-rose-600 text-white font-bold animate-pulse" };
+                          } else if (diffDays === 1) {
+                            return { text: "Besok!", style: "bg-amber-100 text-amber-800 border border-amber-200 font-bold dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/40" };
+                          } else if (diffDays <= 3) {
+                            return { text: `${diffDays} hari lagi`, style: "bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-950/20 dark:text-amber-350 dark:border-amber-900/30" };
+                          } else {
+                            return { text: `${diffDays} hari`, style: "bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30" };
+                          }
+                        })();
+
+                        return (
+                          <div key={t.id} className="p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-150 dark:border-slate-800 rounded-xl space-y-1.5 flex flex-col justify-between hover:bg-slate-100 dark:hover:bg-slate-800/80 transition">
+                            <div className="flex justify-between items-start gap-2">
+                              <div>
+                                <span className="text-[8px] font-bold font-mono px-1.5 py-0.2 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 rounded-md border border-indigo-100 dark:border-indigo-900/40 uppercase">
+                                  {t.tipe.replace("_", " ")}
+                                </span>
+                                <h5 className="font-bold text-slate-800 dark:text-slate-200 text-xs mt-1">
+                                  {t.judul}
+                                </h5>
+                              </div>
+                              <span className={`text-[9px] px-2 py-0.5 rounded-full leading-none shrink-0 ${remaining.style}`}>
+                                {remaining.text}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center text-[9px] text-slate-400">
+                              <span>Elemen: {t.elemen}</span>
+                              <span>Batas: {t.deadline}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Hai Guru <strong className="text-indigo-600 dark:text-indigo-400">{user.nama}</strong>, terdapat pengumpulan tugas baru dari siswa yang belum Anda berikan nilai. Segera ulas dan berikan penilaian untuk pemutakhiran buku rapor hasil belajar:
+                  </p>
+                  
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                    {submissions
+                      .filter((s) => s.status === "BELUM_DINILAI")
+                      .map((s) => {
+                        const targetTugas = tugasList.find((t) => t.id === s.tugasId);
+                        return (
+                          <div key={s.id} className="p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-150 dark:border-slate-800 rounded-xl space-y-1 flex flex-col justify-between hover:bg-slate-100 dark:hover:bg-slate-800/80 transition flex-shrink-0">
+                            <div className="flex justify-between items-start gap-2">
+                              <div>
+                                <h5 className="font-bold text-slate-800 dark:text-slate-200 text-xs">
+                                  {s.siswaNama}
+                                </h5>
+                                <p className="text-[10px] text-slate-400 truncate max-w-[200px] mt-0.5">
+                                  Tugas: {targetTugas?.judul || "Evaluasi"}
+                                </p>
+                              </div>
+                              <span className="text-[8px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider font-mono shrink-0">
+                                Belum Dinilai
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center text-[9px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/50">
+                              <span>Kelas: {targetTugas?.kelas || "X"}</span>
+                              <span>Dikumpul: {new Date(s.tanggalDikumpul).toLocaleDateString("id-ID")}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowDeadlinePopup(false)}
+                className="border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold px-4 py-2 rounded-xl text-xs transition"
+                id="btn-close-deadline-popup"
+              >
+                Nanti Saja
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeadlinePopup(false);
+                  setCurrentTab("tugas");
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-md shadow-indigo-100 dark:shadow-none"
+                id="btn-action-deadline-popup"
+              >
+                {user.role === "SISWA" ? "Kerjakan Sekarang" : "Buka Menu Nilai"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
