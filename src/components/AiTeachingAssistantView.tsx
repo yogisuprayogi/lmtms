@@ -26,6 +26,7 @@ import {
   Layers,
   Code
 } from "lucide-react";
+import { WysiwygEditor } from "./WysiwygEditor";
 
 interface AiTeachingAssistantViewProps {
   user: {
@@ -686,15 +687,16 @@ export const AiTeachingAssistantView: React.FC<AiTeachingAssistantViewProps> = (
                       className="w-full border border-slate-200 bg-white p-2.5 rounded-xl text-xs font-medium focus:outline-indigo-500"
                     />
                   </div>
-                  <div>
+                  <div className="space-y-1 text-left">
                     <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5">
                       Target Kompetensi Kelulusan
                     </label>
-                    <textarea
-                      rows={2}
+                    <WysiwygEditor
+                      id="ai-atp-targetKompetensi-editor"
                       value={atpParams.targetKompetensi}
-                      onChange={(e) => setAtpParams({ ...atpParams, targetKompetensi: e.target.value })}
-                      className="w-full border border-slate-200 bg-white p-2.5 rounded-xl text-xs font-medium focus:outline-indigo-500"
+                      onChange={(val) => setAtpParams({ ...atpParams, targetKompetensi: val })}
+                      placeholder="Target kompetensi kelulusan..."
+                      heightClass="min-h-[100px]"
                     />
                   </div>
                 </div>
@@ -826,31 +828,31 @@ export const AiTeachingAssistantView: React.FC<AiTeachingAssistantViewProps> = (
                       <option value="Eksperimen Kelompok Terpandu">Eksperimen Kelompok Terpandu</option>
                     </select>
                   </div>
-                  <div>
+                  <div className="space-y-1 text-left">
                     <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5">
                       Instruksi Kasus / Skenario Praktik
                     </label>
-                    <textarea
-                      rows={2}
+                    <WysiwygEditor
+                      id="ai-lkpd-skenario-editor"
                       value={lkpdParams.skenario}
-                      onChange={(e) => setLkpdParams({ ...lkpdParams, skenario: e.target.value })}
-                      className="w-full border border-slate-200 bg-white p-2.5 rounded-xl text-xs font-medium focus:outline-indigo-500"
+                      onChange={(val) => setLkpdParams({ ...lkpdParams, skenario: val })}
+                      placeholder="Skenario atau studi kasus praktik..."
+                      heightClass="min-h-[100px]"
                     />
                   </div>
                 </div>
               )}
 
-              {/* Detail Instruksi Tambahan (Opsional) */}
-              <div>
+              <div className="space-y-1 text-left">
                 <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5">
                   Petunjuk Tambahan Guru (Opsional)
                 </label>
-                <textarea
-                  rows={3}
-                  placeholder="Beri fokus detail, contoh: 'fokuskan pada kode python pemrograman modular', atau 'gunakan studi kasus toko buku online'."
+                <WysiwygEditor
+                  id="ai-common-prompt-editor"
                   value={commonParams.prompt}
-                  onChange={(e) => setCommonParams({ ...commonParams, prompt: e.target.value })}
-                  className="w-full border border-slate-200 bg-white p-2.5 rounded-xl text-xs font-medium focus:outline-indigo-500"
+                  onChange={(val) => setCommonParams({ ...commonParams, prompt: val })}
+                  placeholder="Beri fokus detail, contoh: 'fokuskan pada kode python pemrograman modular', atau 'gunakan studi kasus toko buku online'."
+                  heightClass="min-h-[100px]"
                 />
               </div>
 
@@ -943,11 +945,12 @@ export const AiTeachingAssistantView: React.FC<AiTeachingAssistantViewProps> = (
 
               {isEditing ? (
                 /* Code/Markdown Textarea Editor */
-                <textarea
-                  className="w-full h-full p-4 font-mono text-xs text-slate-700 border-0 outline-0 focus:ring-0 bg-slate-50/50 rounded-xl"
+                <WysiwygEditor
+                  id="ai-generated-content-editor"
                   value={generatedContent}
-                  onChange={(e) => setGeneratedContent(e.target.value)}
+                  onChange={(val) => setGeneratedContent(val)}
                   placeholder="Isi konten Markdown..."
+                  heightClass="min-h-[400px]"
                 />
               ) : (
                 /* Formatted Render Panel */

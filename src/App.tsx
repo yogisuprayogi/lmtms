@@ -53,6 +53,7 @@ import {
 import { ELEMEN_INFORMATIKA, User, TahunPelajaran } from "./types";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
+import { WysiwygEditor } from "./components/WysiwygEditor";
 import { AnalitikaView } from "./components/AnalitikaView";
 import { LoginView } from "./components/LoginView";
 import { LogsView } from "./components/LogsView";
@@ -1487,48 +1488,14 @@ export default function App() {
                         />
                       </div>
 
-                      <div className="flex-1 min-h-[220px] flex flex-col">
-                        <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Isi Dokumen (Format Markdown)</label>
-                        
-                        {/* TOOLBAR FORMAT TEKS */}
-                        <div className="flex items-center gap-1.5 p-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-t-lg text-xs">
-                          <button
-                            type="button"
-                            onClick={() => handleFormatText("doc-content-textarea-create", "bold", docForm.konten, (val) => setDocForm({ ...docForm, konten: val }))}
-                            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 font-bold"
-                            title="Tebalkan Teks (Bold)"
-                          >
-                            <Bold className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleFormatText("doc-content-textarea-create", "italic", docForm.konten, (val) => setDocForm({ ...docForm, konten: val }))}
-                            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 italic"
-                            title="Miringkan Teks (Italic)"
-                          >
-                            <Italic className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleFormatText("doc-content-textarea-create", "bullet", docForm.konten, (val) => setDocForm({ ...docForm, konten: val }))}
-                            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1"
-                            title="Daftar Bulatan (Bullet Points)"
-                          >
-                            <List className="h-3.5 w-3.5" />
-                          </button>
-                          <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
-                          <span className="text-[10px] text-slate-400 font-medium select-none uppercase tracking-wider px-1">
-                            Format Markdown
-                          </span>
-                        </div>
-
-                        <textarea
+                      <div className="flex-1 min-h-[220px] flex flex-col text-left">
+                        <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Isi Dokumen (Editor WYSIWYG / Markdown)</label>
+                        <WysiwygEditor
                           id="doc-content-textarea-create"
-                          required
                           value={docForm.konten}
-                          onChange={(e) => setDocForm({ ...docForm, konten: e.target.value })}
+                          onChange={(val) => setDocForm({ ...docForm, konten: val })}
                           placeholder="Tulis isi draf secara detail atau gunakan generator AI di atas..."
-                          className="flex-1 block w-full border border-t-0 border-slate-200 rounded-b-lg p-3 text-sm focus:outline-blue-500 font-mono resize-none h-[220px]"
+                          heightClass="min-h-[240px]"
                         />
                       </div>
 
@@ -1602,43 +1569,12 @@ export default function App() {
                             className="font-bold text-base text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700 pb-2 focus:outline-none focus:border-blue-500 mb-4 bg-transparent"
                           />
                           
-                          {/* TOOLBAR FORMAT TEKS */}
-                          <div className="flex items-center gap-1.5 p-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-xs mb-3">
-                            <button
-                              type="button"
-                              onClick={() => handleFormatText("doc-content-textarea-edit", "bold", selectedDoc.konten, (val) => setSelectedDoc({ ...selectedDoc, konten: val }))}
-                              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 font-bold"
-                              title="Tebalkan Teks (Bold)"
-                            >
-                              <Bold className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleFormatText("doc-content-textarea-edit", "italic", selectedDoc.konten, (val) => setSelectedDoc({ ...selectedDoc, konten: val }))}
-                              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 italic"
-                              title="Miringkan Teks (Italic)"
-                            >
-                              <Italic className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleFormatText("doc-content-textarea-edit", "bullet", selectedDoc.konten, (val) => setSelectedDoc({ ...selectedDoc, konten: val }))}
-                              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1"
-                              title="Daftar Bulatan (Bullet Points)"
-                            >
-                              <List className="h-3.5 w-3.5" />
-                            </button>
-                            <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
-                            <span className="text-[10px] text-slate-400 font-medium select-none uppercase tracking-wider px-1">
-                              Format Markdown
-                            </span>
-                          </div>
-
-                          <textarea
+                          <WysiwygEditor
                             id="doc-content-textarea-edit"
                             value={selectedDoc.konten}
-                            onChange={(e) => setSelectedDoc({ ...selectedDoc, konten: e.target.value })}
-                            className="flex-1 w-full p-2 text-xs font-mono focus:outline-none resize-none dark:bg-slate-900 dark:text-slate-100"
+                            onChange={(val) => setSelectedDoc({ ...selectedDoc, konten: val })}
+                            placeholder="Mulai menulis konten dokumen..."
+                            heightClass="min-h-[300px]"
                           />
                         </div>
                       </div>

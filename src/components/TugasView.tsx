@@ -13,6 +13,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { User, Tugas, PengumpulanTugas, ELEMEN_INFORMATIKA } from "../types";
+import { WysiwygEditor } from "./WysiwygEditor";
 
 interface TugasViewProps {
   user: User;
@@ -324,14 +325,14 @@ export const TugasView: React.FC<TugasViewProps> = ({
               />
             </div>
 
-            <div>
+            <div className="space-y-1.5 text-left">
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Instruksi / Pertanyaan Esai</label>
-              <textarea
-                required
+              <WysiwygEditor
+                id="tugas-instruksi-editor"
                 value={tugasForm.instruksi}
-                onChange={(e) => setTugasForm({ ...tugasForm, instruksi: e.target.value })}
+                onChange={(val) => setTugasForm({ ...tugasForm, instruksi: val })}
                 placeholder="Instruksi pengerjaan detail untuk tugas atau kuis..."
-                className="block w-full border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm focus:outline-indigo-500 h-[100px] dark:bg-slate-800 dark:text-slate-100"
+                heightClass="min-h-[160px]"
               />
             </div>
 
@@ -547,12 +548,12 @@ export const TugasView: React.FC<TugasViewProps> = ({
                   <div className="space-y-4">
                     <h4 className="font-display font-bold text-slate-800 dark:text-slate-200 border-b dark:border-slate-800 pb-2">Kirim Lembar Jawaban</h4>
                     <p className="text-xs text-slate-400">Tulis tanggapan atau letakkan tautan repositori/skrip kode pemrograman Anda di bawah ini:</p>
-                    <textarea
-                      required
+                    <WysiwygEditor
+                      id="submission-jawaban-editor"
                       value={submissionJawabanText}
-                      onChange={(e) => setSubmissionJawabanText(e.target.value)}
+                      onChange={(val) => setSubmissionJawabanText(val)}
                       placeholder="Ketik tanggapan atau lampirkan sintaks Python Anda di sini..."
-                      className="w-full border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm focus:outline-indigo-500 font-mono h-[180px] dark:bg-slate-800 dark:text-slate-100"
+                      heightClass="min-h-[180px]"
                     />
                     <button
                       onClick={handleSubmissionSubmit}
@@ -654,13 +655,14 @@ export const TugasView: React.FC<TugasViewProps> = ({
                       />
                     </div>
 
-                    <div>
+                    <div className="space-y-1.5 text-left">
                       <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Umpan Balik & Catatan Guru</label>
-                      <textarea
+                      <WysiwygEditor
+                        id="grading-comment-editor"
                         value={gradingComment}
-                        onChange={(e) => setGradingComment(e.target.value)}
+                        onChange={(val) => setGradingComment(val)}
                         placeholder="Tulis masukan konstruktif untuk memotivasi siswa..."
-                        className="block w-full border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs focus:outline-indigo-500 h-[80px] dark:bg-slate-800 dark:text-slate-100"
+                        heightClass="min-h-[120px]"
                       />
                     </div>
 

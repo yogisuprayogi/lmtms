@@ -51,6 +51,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [showDeadlineTooltip, setShowDeadlineTooltip] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [activeFilter, setActiveFilter] = React.useState("ALL");
+  const [selectedClass, setSelectedClass] = React.useState("ALL");
+  const [selectedPriority, setSelectedPriority] = React.useState("ALL");
 
   React.useEffect(() => {
     // Fetch initial identity
@@ -116,6 +118,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             urgencyStyle = "text-amber-300";
           }
 
+          let priority = "RENDAH";
+          if (daysLeft < 0 || daysLeft <= 1) {
+            priority = "TINGGI";
+          } else if (daysLeft <= 5) {
+            priority = "SEDANG";
+          }
+
           return {
             id: t.id,
             title: t.judul,
@@ -125,7 +134,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             detail: `Elemen: ${t.elemen}`,
             urgencyStyle,
             urgencyText,
-            badgeLabel: t.deadline || "Tanpa batas"
+            badgeLabel: t.deadline || "Tanpa batas",
+            kelas: t.kelas || "X",
+            priority
           };
         })
         .sort((a, b) => a.daysLeft - b.daysLeft);
@@ -157,6 +168,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             urgencyStyle = "text-amber-300";
           }
 
+          let priority = "RENDAH";
+          if (daysLeft < 0 || daysLeft <= 1) {
+            priority = "TINGGI";
+          } else if (daysLeft <= 5) {
+            priority = "SEDANG";
+          }
+
           return {
             id: `tugas-${t.id}`,
             title: `Tenggat: ${t.judul}`,
@@ -166,7 +184,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             detail: `Kelas: ${t.kelas || "X"} • ${t.tipe.replace("_", " ")}`,
             urgencyStyle,
             urgencyText,
-            badgeLabel: t.deadline
+            badgeLabel: t.deadline,
+            kelas: t.kelas || "X",
+            priority
           };
         })
         .filter((t) => t.daysLeft >= -7 && t.daysLeft <= 30); // Show recent past and future up to 30 days
@@ -196,6 +216,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             urgencyText = `${daysSinceSubmitted} hari lalu`;
           }
 
+          let priority = "RENDAH";
+          if (daysSinceSubmitted >= 2) {
+            priority = "TINGGI";
+          } else if (daysSinceSubmitted === 1) {
+            priority = "SEDANG";
+          }
+
           return {
             id: `sub-${s.id}`,
             title: `Nilai: ${s.siswaNama}`,
@@ -205,7 +232,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             detail: `Tugas: ${targetTugas?.judul || "Evaluasi"} • Kelas: ${targetTugas?.kelas || "X"}`,
             urgencyStyle,
             urgencyText,
-            badgeLabel: "Belum Dinilai"
+            badgeLabel: "Belum Dinilai",
+            kelas: targetTugas?.kelas || "X",
+            priority
           };
         });
 
@@ -304,8 +333,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items = items.filter((item) => item.type === "TUGAS_DEADLINE");
     }
 
+    // Class filter (Kelas)
+    if (selectedClass !== "ALL") {
+      items = items.filter((item) => item.kelas === selectedClass);
+    }
+
+    // Priority filter (Prioritas)
+    if (selectedPriority !== "ALL") {
+      items = items.filter((item) => item.priority === selectedPriority);
+    }
+
     return items;
-  }, [pendingItems, searchTerm, activeFilter, user]);
+  }, [pendingItems, searchTerm, activeFilter, selectedClass, selectedPriority, user]);
 
   const modalTheme = React.useMemo(() => {
     if (badgeCount === 0) {
@@ -664,6 +703,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setShowDeadlineTooltip(false);
             setSearchTerm("");
             setActiveFilter("ALL");
+            setSelectedClass("ALL");
+            setSelectedPriority("ALL");
           }}
           id="deadline-panel-overlay"
         >
@@ -701,6 +742,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   setShowDeadlineTooltip(false);
                   setSearchTerm("");
                   setActiveFilter("ALL");
+                  setSelectedClass("ALL");
+                  setSelectedPriority("ALL");
                 }}
                 className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800/60 transition"
                 title="Tutup Panel"
@@ -784,6 +827,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
 
+            {/* Secondary Multi-Dimensional Filters */}
+            <div className="px-5 py-3 border-b border-slate-800/40 bg-slate-950/20 grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Filter Kelas / Tingkat
+                </label>
+                <select
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 outline-none transition cursor-pointer"
+                  id="filter-kelas-select"
+                >
+                  <option value="ALL">Semua Kelas</option>
+                  <option value="X">Kelas X</option>
+                  <option value="XI">Kelas XI</option>
+                  <option value="XII">Kelas XII</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Prioritas Tugas
+                </label>
+                <select
+                  value={selectedPriority}
+                  onChange={(e) => setSelectedPriority(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 outline-none transition cursor-pointer"
+                  id="filter-prioritas-select"
+                >
+                  <option value="ALL">Semua Prioritas</option>
+                  <option value="TINGGI">🔴 Tinggi / Mendesak</option>
+                  <option value="SEDANG">🟡 Sedang</option>
+                  <option value="RENDAH">🟢 Rendah</option>
+                </select>
+              </div>
+            </div>
+
             {/* Scrollable list */}
             <div className="flex-1 overflow-y-auto p-5 space-y-3 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
               {filteredModalItems.length === 0 ? (
@@ -819,6 +899,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         setShowDeadlineTooltip(false);
                         setSearchTerm("");
                         setActiveFilter("ALL");
+                        setSelectedClass("ALL");
+                        setSelectedPriority("ALL");
                         changeTab("tugas");
                       }}
                       className={`p-3 border border-slate-800/60 hover:border-slate-700/80 rounded-xl flex items-center justify-between gap-4 cursor-pointer transition-all duration-150 border-l-4 ${borderIndicator} ${
@@ -885,6 +967,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     setShowDeadlineTooltip(false);
                     setSearchTerm("");
                     setActiveFilter("ALL");
+                    setSelectedClass("ALL");
+                    setSelectedPriority("ALL");
                     changeTab("tugas");
                   }}
                   className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-lg transition text-xs shadow-md shadow-indigo-600/20"
@@ -896,6 +980,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     setShowDeadlineTooltip(false);
                     setSearchTerm("");
                     setActiveFilter("ALL");
+                    setSelectedClass("ALL");
+                    setSelectedPriority("ALL");
                   }}
                   className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-semibold rounded-lg transition text-xs"
                 >

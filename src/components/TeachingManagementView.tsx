@@ -52,6 +52,7 @@ import {
   PolarRadiusAxis,
   Radar
 } from "recharts";
+import { WysiwygEditor } from "./WysiwygEditor";
 
 interface TeachingManagementViewProps {
   user: {
@@ -1538,15 +1539,14 @@ export const TeachingManagementView: React.FC<TeachingManagementViewProps> = ({ 
                     </div>
                   </div>
 
-                  <div>
+                  <div className="space-y-1.5 text-left">
                     <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Instruksi Detail Tugas</label>
-                    <textarea
-                      required
-                      rows={4}
-                      placeholder="Tulis instruksi langkah-langkah pengerjaan di sini..."
+                    <WysiwygEditor
+                      id="teaching-asg-instruksi-editor"
                       value={newAsg.instruksi}
-                      onChange={(e) => setNewAsg({ ...newAsg, instruksi: e.target.value })}
-                      className="w-full text-xs border border-slate-200 p-2.5 rounded-lg bg-white"
+                      onChange={(val) => setNewAsg({ ...newAsg, instruksi: val })}
+                      placeholder="Tulis instruksi langkah-langkah pengerjaan di sini..."
+                      heightClass="min-h-[140px]"
                     />
                   </div>
 
@@ -1685,14 +1685,14 @@ export const TeachingManagementView: React.FC<TeachingManagementViewProps> = ({ 
                       />
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-1.5 text-left">
                       <label className="block text-[10px] font-bold uppercase text-slate-500">Umpan Balik Guru (Feedback)</label>
-                      <textarea
-                        rows={3}
-                        placeholder="Berikan saran membangun, apresiasi kerja keras siswa, atau evaluasi kekurangan program..."
+                      <WysiwygEditor
+                        id="teaching-temp-feedback-editor"
                         value={tempFeedback}
-                        onChange={(e) => setTempFeedback(e.target.value)}
-                        className="w-full text-xs border border-slate-200 p-2 rounded-lg bg-white"
+                        onChange={(val) => setTempFeedback(val)}
+                        placeholder="Berikan saran membangun, apresiasi kerja keras siswa, atau evaluasi kekurangan program..."
+                        heightClass="min-h-[120px]"
                       />
                     </div>
 
@@ -1972,15 +1972,14 @@ export const TeachingManagementView: React.FC<TeachingManagementViewProps> = ({ 
                     ) : (
                       // Input Form Mode
                       <form onSubmit={handleSubmitAnswer} className="space-y-4">
-                        <div className="space-y-1">
+                        <div className="space-y-1.5 text-left">
                           <label className="block text-[10px] font-bold uppercase text-slate-500">Tulis Jawaban Anda</label>
-                          <textarea
-                            required
-                            rows={8}
-                            placeholder="Ketik draf tulisan atau salin kode program Python Anda di sini..."
+                          <WysiwygEditor
+                            id="teaching-student-answer-editor"
                             value={studentAnswerText}
-                            onChange={(e) => setStudentAnswerText(e.target.value)}
-                            className="w-full text-xs font-mono border border-slate-200 p-3 rounded-lg bg-white focus:outline-blue-500"
+                            onChange={(val) => setStudentAnswerText(val)}
+                            placeholder="Ketik draf tulisan atau salin kode program Python Anda di sini..."
+                            heightClass="min-h-[180px]"
                           />
                         </div>
 

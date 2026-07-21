@@ -33,6 +33,7 @@ import {
   X
 } from "lucide-react";
 import { ELEMEN_INFORMATIKA } from "../types";
+import { WysiwygEditor } from "./WysiwygEditor";
 
 // ==========================================
 // PRE-SEEDED MOCK DATA FOR INDONESIAN LMS
@@ -713,15 +714,14 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
                         className="w-full text-xs border border-slate-200 dark:border-slate-700 p-2 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium"
                       />
                     </div>
-                    <div>
+                    <div className="space-y-1.5 text-left">
                       <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Isi Capaian Pembelajaran (CP)</label>
-                      <textarea
-                        required
-                        rows={6}
-                        placeholder="Tuliskan deskripsi lengkap Capaian Pembelajaran..."
+                      <WysiwygEditor
+                        id="lms-cp-deskripsi-editor"
                         value={cpForm.deskripsi}
-                        onChange={(e) => setCpForm({...cpForm, deskripsi: e.target.value})}
-                        className="w-full text-xs border border-slate-200 dark:border-slate-700 p-2 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 leading-relaxed font-sans"
+                        onChange={(val) => setCpForm({...cpForm, deskripsi: val})}
+                        placeholder="Tuliskan deskripsi lengkap Capaian Pembelajaran..."
+                        heightClass="min-h-[160px]"
                       />
                     </div>
                     <div className="flex gap-2">
@@ -881,15 +881,14 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
                       className="w-full text-xs border border-slate-200 p-2 rounded bg-white"
                     />
                   </div>
-                  <div>
+                  <div className="space-y-1.5 text-left">
                     <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Rumusan Tujuan Pembelajaran</label>
-                    <textarea
-                      required
-                      rows={3}
-                      placeholder="Rumuskan tujuan pembelajaran..."
+                    <WysiwygEditor
+                      id="lms-atp-tujuan-editor"
                       value={atpForm.tujuan}
-                      onChange={(e) => setAtpForm({...atpForm, tujuan: e.target.value})}
-                      className="w-full text-xs border border-slate-200 p-2 rounded bg-white"
+                      onChange={(val) => setAtpForm({...atpForm, tujuan: val})}
+                      placeholder="Rumuskan tujuan pembelajaran..."
+                      heightClass="min-h-[140px]"
                     />
                   </div>
                   <button
@@ -1015,15 +1014,14 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
                       />
                     </div>
                   </div>
-                  <div>
+                  <div className="space-y-1.5 text-left">
                     <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Langkah Sesi Inti & Asesmen</label>
-                    <textarea
-                      required
-                      rows={5}
-                      placeholder="Tuliskan aktivitas utama guru dan siswa..."
+                    <WysiwygEditor
+                      id="lms-modul-isi-editor"
                       value={modForm.isi}
-                      onChange={(e) => setModForm({...modForm, isi: e.target.value})}
-                      className="w-full text-xs border border-slate-200 p-2 rounded bg-white font-mono"
+                      onChange={(val) => setModForm({...modForm, isi: val})}
+                      placeholder="Tuliskan aktivitas utama guru dan siswa..."
+                      heightClass="min-h-[160px]"
                     />
                   </div>
                   <button
@@ -1199,15 +1197,14 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
               <div className="lg:col-span-4 bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4 h-fit">
                 <h3 className="font-display font-bold text-slate-800 text-xs uppercase tracking-wider">Tambah Rubrik KKTP</h3>
                 <form onSubmit={handleAddKktp} className="space-y-4">
-                  <div>
+                  <div className="space-y-1.5 text-left">
                     <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Tujuan Pembelajaran (TP) Terkait</label>
-                    <textarea
-                      required
-                      rows={3}
-                      placeholder="Contoh: Siswa mampu mendeteksi IP Address dan subnet mask pada jaringan LAN."
+                    <WysiwygEditor
+                      id="lms-kktp-tujuan-editor"
                       value={kktpForm.tujuanBelajar}
-                      onChange={(e) => setKktpForm({...kktpForm, tujuanBelajar: e.target.value})}
-                      className="w-full text-xs border border-slate-200 p-2 rounded bg-white"
+                      onChange={(val) => setKktpForm({...kktpForm, tujuanBelajar: val})}
+                      placeholder="Contoh: Siswa mampu mendeteksi IP Address dan subnet mask pada jaringan LAN."
+                      heightClass="min-h-[140px]"
                     />
                   </div>
                   <div>

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Plus, Trash2, ChevronLeft, ChevronRight, BookOpen, AlertCircle, PenTool, Globe, FileText, FileSpreadsheet, Presentation, Video, Music, Image, File, Search, X, SlidersHorizontal, Bold, Italic, List } from "lucide-react";
 import { User, Materi, ELEMEN_INFORMATIKA } from "../types";
+import { WysiwygEditor } from "./WysiwygEditor";
 
 export const getMateriIcon = (m: Materi) => {
   if (m.tipe === "LINK") {
@@ -553,48 +554,14 @@ export const MateriView: React.FC<MateriViewProps> = ({
 
             {/* Form Fields depend on selected Tipe */}
             {materiForm.tipe === "TEKS" && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Isi Materi Pembelajaran (Format Markdown)</label>
-                
-                {/* TOOLBAR FORMAT TEKS */}
-                <div className="flex items-center gap-1.5 p-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-t-lg text-xs">
-                  <button
-                    type="button"
-                    onClick={() => handleFormatText("materi-content-textarea", "bold", materiForm.konten, (val) => setMateriForm({ ...materiForm, konten: val }))}
-                    className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 font-bold"
-                    title="Tebalkan Teks (Bold)"
-                  >
-                    <Bold className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleFormatText("materi-content-textarea", "italic", materiForm.konten, (val) => setMateriForm({ ...materiForm, konten: val }))}
-                    className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1 italic"
-                    title="Miringkan Teks (Italic)"
-                  >
-                    <Italic className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleFormatText("materi-content-textarea", "bullet", materiForm.konten, (val) => setMateriForm({ ...materiForm, konten: val }))}
-                    className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition flex items-center gap-1"
-                    title="Daftar Bulatan (Bullet Points)"
-                  >
-                    <List className="h-3.5 w-3.5" />
-                  </button>
-                  <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
-                  <span className="text-[10px] text-slate-400 font-medium select-none uppercase tracking-wider px-1">
-                    Format Markdown
-                  </span>
-                </div>
-
-                <textarea
+              <div className="space-y-1.5 text-left">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Isi Materi Pembelajaran (Editor WYSIWYG / Markdown)</label>
+                <WysiwygEditor
                   id="materi-content-textarea"
-                  required
                   value={materiForm.konten}
-                  onChange={(e) => setMateriForm({ ...materiForm, konten: e.target.value })}
+                  onChange={(val) => setMateriForm({ ...materiForm, konten: val })}
                   placeholder="Tulis materi lengkap di sini..."
-                  className="block w-full border border-t-0 border-slate-200 dark:border-slate-700 rounded-b-lg p-3 text-sm focus:outline-indigo-500 font-mono h-[300px] dark:bg-slate-800 dark:text-slate-100"
+                  heightClass="min-h-[320px]"
                 />
               </div>
             )}
