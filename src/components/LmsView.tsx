@@ -28,7 +28,9 @@ import {
   ChevronDown,
   Info,
   Layers,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Pencil,
+  X
 } from "lucide-react";
 import { ELEMEN_INFORMATIKA } from "../types";
 
@@ -220,6 +222,98 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
   const [protaList, setProtaList] = useState(MOCK_PROTA);
   const [versions, setVersions] = useState(MOCK_VERSIONING);
   const [selectedVersion, setSelectedVersion] = useState<any | null>(null);
+
+  // CP Management States & Actions
+  const [cpList, setCpList] = useState(() =>
+    MOCK_CP.map((cp, idx) => ({ ...cp, id: `cp-${idx + 1}` }))
+  );
+  const [isEditingCpId, setIsEditingCpId] = useState<string | null>(null);
+  const [isAddingCp, setIsAddingCp] = useState(false);
+  const [cpForm, setCpForm] = useState({
+    id: "",
+    fase: "E",
+    kelas: "X",
+    elemen: "BK",
+    namaElemen: "Berpikir Komputasional",
+    deskripsi: ""
+  });
+
+  const handleEditCpClick = (cp: any) => {
+    setIsEditingCpId(cp.id);
+    setIsAddingCp(false);
+    setCpForm({
+      id: cp.id,
+      fase: cp.fase,
+      kelas: cp.kelas,
+      elemen: cp.elemen,
+      namaElemen: cp.namaElemen,
+      deskripsi: cp.deskripsi
+    });
+  };
+
+  const handleAddCpClick = () => {
+    setIsAddingCp(true);
+    setIsEditingCpId(null);
+    setCpForm({
+      id: "",
+      fase: "E",
+      kelas: "X",
+      elemen: "BK",
+      namaElemen: "Berpikir Komputasional",
+      deskripsi: ""
+    });
+  };
+
+  const handleElemenChange = (elCode: string) => {
+    const el = ELEMEN_INFORMATIKA.find(e => e.kode === elCode);
+    setCpForm(prev => ({
+      ...prev,
+      elemen: elCode,
+      namaElemen: el ? el.nama : prev.namaElemen
+    }));
+  };
+
+  const handleSaveCp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cpForm.namaElemen || !cpForm.deskripsi) return;
+
+    if (isAddingCp) {
+      const newCp = {
+        id: `cp-${Date.now()}`,
+        fase: cpForm.fase,
+        kelas: cpForm.kelas,
+        elemen: cpForm.elemen,
+        namaElemen: cpForm.namaElemen,
+        deskripsi: cpForm.deskripsi
+      };
+      setCpList([...cpList, newCp]);
+      logVersion(newCp.id, `CP (${newCp.namaElemen})`, `Menambahkan Capaian Pembelajaran Elemen ${newCp.elemen}`);
+      setIsAddingCp(false);
+    } else if (isEditingCpId) {
+      setCpList(cpList.map(cp => cp.id === isEditingCpId ? { ...cp, ...cpForm } : cp));
+      logVersion(isEditingCpId, `CP (${cpForm.namaElemen})`, `Memperbarui Capaian Pembelajaran Elemen ${cpForm.elemen}`);
+      setIsEditingCpId(null);
+    }
+
+    setCpForm({
+      id: "",
+      fase: "E",
+      kelas: "X",
+      elemen: "BK",
+      namaElemen: "Berpikir Komputasional",
+      deskripsi: ""
+    });
+  };
+
+  const handleDeleteCp = (id: string, namaElemen: string) => {
+    if (window.confirm(`Apakah Anda yakin ingin menghapus Capaian Pembelajaran untuk elemen "${namaElemen}"?`)) {
+      setCpList(cpList.filter(cp => cp.id !== id));
+      logVersion(id, `CP (${namaElemen})`, `Menghapus Capaian Pembelajaran`);
+      if (isEditingCpId === id) {
+        setIsEditingCpId(null);
+      }
+    }
+  };
 
   // Form states
   const [atpForm, setAtpForm] = useState({ kode: "", elemen: "BK", kelas: "X", tujuan: "", alokasi: "4 JP" });
@@ -467,39 +561,190 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
         {/* ======================================= */}
         {activeTab === "cp" && (
           <div className="p-6 space-y-6">
-            <div className="border-b border-slate-200 pb-4">
-              <span className="text-xs font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-1 rounded">CP Kurikulum</span>
-              <h2 className="text-lg font-display font-bold text-slate-800 mt-2">Daftar Capaian Pembelajaran (CP) Informatika SMA</h2>
-              <p className="text-slate-500 text-xs">Capaian Pembelajaran (Fase E & Fase F) yang ditetapkan resmi oleh Kemendikbudristek untuk bidang Informatika.</p>
+            <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <span className="text-xs font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-1 rounded">CP Kurikulum</span>
+                <h2 className="text-lg font-display font-bold text-slate-800 mt-2">Daftar Capaian Pembelajaran (CP) Informatika SMA</h2>
+                <p className="text-slate-500 text-xs">Capaian Pembelajaran (Fase E & Fase F) yang ditetapkan resmi oleh Kemendikbudristek untuk bidang Informatika.</p>
+              </div>
+              {(user.role === "GURU" || user.role === "ADMIN") && !isAddingCp && !isEditingCpId && (
+                <button
+                  onClick={handleAddCpClick}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition shrink-0"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Tambah CP Baru</span>
+                </button>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {MOCK_CP.map((cp, idx) => (
-                <div key={idx} className="bg-slate-50/50 border border-slate-200/80 rounded-xl p-5 hover:border-rose-200 transition space-y-3">
-                  <div className="flex justify-between items-start">
-                    <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-100 font-mono font-bold px-2 py-0.5 rounded uppercase">
-                      Kelas {cp.kelas} (Fase {cp.fase})
-                    </span>
-                    <span className="text-xs font-bold text-slate-400">{cp.elemen}</span>
-                  </div>
-                  <h3 className="font-display font-bold text-slate-800 text-sm">{cp.namaElemen}</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed italic bg-white p-3 rounded border border-slate-100">
-                    "{cp.deskripsi}"
-                  </p>
-                  <div className="pt-2 flex justify-end">
+            {/* CP GRID & FORM CONTAINER */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* CP Form (only visible during active edit or add for Guru/Admin) */}
+              {(isAddingCp || isEditingCpId) && (user.role === "GURU" || user.role === "ADMIN") && (
+                <div className="lg:col-span-4 bg-slate-50 dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+                  <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+                    <h3 className="font-display font-bold text-slate-800 dark:text-white text-xs uppercase tracking-wider">
+                      {isAddingCp ? "Tambah CP Baru" : "Edit CP"}
+                    </h3>
                     <button
+                      type="button"
                       onClick={() => {
-                        setDeepPrompt(`Rancang RPP dari Capaian Pembelajaran Elemen ${cp.elemen} (${cp.namaElemen}): ${cp.deskripsi}`);
-                        setActiveTab("deep_learning");
+                        setIsAddingCp(false);
+                        setIsEditingCpId(null);
                       }}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 hover:text-blue-800 transition"
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition"
                     >
-                      <span>Gunakan Sebagai Draf AI</span>
-                      <ChevronRight className="h-3 w-3" />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
+                  <form onSubmit={handleSaveCp} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Kelas</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Misal: X, XI, XII"
+                          value={cpForm.kelas}
+                          onChange={(e) => setCpForm({...cpForm, kelas: e.target.value})}
+                          className="w-full text-xs border border-slate-200 dark:border-slate-700 p-2 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Fase</label>
+                        <select
+                          value={cpForm.fase}
+                          onChange={(e) => setCpForm({...cpForm, fase: e.target.value})}
+                          className="w-full text-xs border border-slate-200 dark:border-slate-700 p-2 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
+                        >
+                          <option value="E">Fase E</option>
+                          <option value="F">Fase F</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Elemen</label>
+                      <select
+                        value={cpForm.elemen}
+                        onChange={(e) => handleElemenChange(e.target.value)}
+                        className="w-full text-xs border border-slate-200 dark:border-slate-700 p-2 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold"
+                      >
+                        {ELEMEN_INFORMATIKA.map((el) => (
+                          <option key={el.kode} value={el.kode}>
+                            {el.kode} ({el.nama})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Nama Elemen</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Misal: Berpikir Komputasional"
+                        value={cpForm.namaElemen}
+                        onChange={(e) => setCpForm({...cpForm, namaElemen: e.target.value})}
+                        className="w-full text-xs border border-slate-200 dark:border-slate-700 p-2 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Isi Capaian Pembelajaran (CP)</label>
+                      <textarea
+                        required
+                        rows={6}
+                        placeholder="Tuliskan deskripsi lengkap Capaian Pembelajaran..."
+                        value={cpForm.deskripsi}
+                        onChange={(e) => setCpForm({...cpForm, deskripsi: e.target.value})}
+                        className="w-full text-xs border border-slate-200 dark:border-slate-700 p-2 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 leading-relaxed font-sans"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2.5 rounded shadow transition flex items-center justify-center gap-1.5"
+                      >
+                        <span>{isAddingCp ? "Tambah CP" : "Simpan CP"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingCp(false);
+                          setIsEditingCpId(null);
+                        }}
+                        className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-xs font-bold transition"
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              ))}
+              )}
+
+              {/* CP Cards List */}
+              <div className={`${isAddingCp || isEditingCpId ? "lg:col-span-8" : "lg:col-span-12"} grid grid-cols-1 md:grid-cols-2 gap-4`}>
+                {cpList.map((cp) => (
+                  <div
+                    key={cp.id}
+                    className={`bg-slate-50/50 dark:bg-slate-900/30 border rounded-xl p-5 hover:border-rose-200 dark:hover:border-rose-900/40 transition space-y-3 flex flex-col justify-between ${
+                      isEditingCpId === cp.id
+                        ? "border-rose-500 ring-2 ring-rose-500/20 dark:border-rose-600 dark:ring-rose-600/30"
+                        : "border-slate-200/80 dark:border-slate-800/80"
+                    }`}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30 font-mono font-bold px-2 py-0.5 rounded uppercase">
+                          Kelas {cp.kelas} (Fase {cp.fase})
+                        </span>
+                        <span className="text-xs font-bold text-slate-400 dark:text-slate-500">{cp.elemen}</span>
+                      </div>
+                      <h3 className="font-display font-bold text-slate-800 dark:text-white text-sm">{cp.namaElemen}</h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic bg-white dark:bg-slate-900 p-3 rounded border border-slate-100 dark:border-slate-800">
+                        "{cp.deskripsi}"
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100/60 dark:border-slate-800/40 flex justify-between items-center">
+                      <button
+                        onClick={() => {
+                          setDeepPrompt(`Rancang RPP dari Capaian Pembelajaran Elemen ${cp.elemen} (${cp.namaElemen}): ${cp.deskripsi}`);
+                          setActiveTab("deep_learning");
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
+                      >
+                        <span>Gunakan Sebagai Draf AI</span>
+                        <ChevronRight className="h-3 w-3" />
+                      </button>
+
+                      {(user.role === "GURU" || user.role === "ADMIN") && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => handleEditCpClick(cp)}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition"
+                            title="Edit Capaian"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCp(cp.id, cp.namaElemen)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
+                            title="Hapus Capaian"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {cpList.length === 0 && (
+                  <div className="col-span-full py-12 text-center bg-slate-50 dark:bg-slate-900/20 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                    <p className="text-slate-400 text-xs">Belum ada Capaian Pembelajaran yang ditambahkan.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
