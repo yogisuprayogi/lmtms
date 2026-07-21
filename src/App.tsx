@@ -7,6 +7,7 @@ import {
   Calendar,
   Sparkles,
   Printer,
+  Download,
   Plus,
   Trash2,
   GraduationCap,
@@ -50,6 +51,7 @@ import {
   PolarRadiusAxis,
   Radar
 } from "recharts";
+import { exportDocumentToPdf } from "./lib/pdfExporter";
 import { ELEMEN_INFORMATIKA, User, TahunPelajaran } from "./types";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
@@ -1324,6 +1326,23 @@ export default function App() {
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    exportDocumentToPdf({
+                                      judul: doc.judul,
+                                      konten: doc.konten,
+                                      jenis: doc.jenis,
+                                      kelas: doc.kelas,
+                                      elemen: doc.elemen,
+                                      userEmail: user?.email || "yogisuprayogi02@guru.smk.belajar.id"
+                                    });
+                                  }}
+                                  className="flex items-center justify-center gap-1.5 py-2 px-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 rounded-xl text-[11px] font-bold transition active:scale-95"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                  <span>PDF</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
                                     setSelectedDoc(doc);
                                     setTimeout(() => window.print(), 150);
                                   }}
@@ -1537,6 +1556,20 @@ export default function App() {
                         <span className="text-xs text-slate-400 hidden sm:inline">Kelas {selectedDoc.kelas}</span>
                       </div>
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => exportDocumentToPdf({
+                            judul: selectedDoc.judul,
+                            konten: selectedDoc.konten,
+                            jenis: selectedDoc.jenis,
+                            kelas: selectedDoc.kelas,
+                            elemen: selectedDoc.elemen,
+                            userEmail: user?.email || "yogisuprayogi02@guru.smk.belajar.id"
+                          })}
+                          className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition shadow-xs"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          <span>Ekspor PDF</span>
+                        </button>
                         <button
                           onClick={() => window.print()}
                           className="flex items-center gap-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition"

@@ -27,6 +27,7 @@ import {
   Code
 } from "lucide-react";
 import { WysiwygEditor } from "./WysiwygEditor";
+import { exportDocumentToPdf } from "../lib/pdfExporter";
 
 interface AiTeachingAssistantViewProps {
   user: {
@@ -429,6 +430,20 @@ export const AiTeachingAssistantView: React.FC<AiTeachingAssistantViewProps> = (
     element.click();
     document.body.removeChild(element);
     showToast("Berkas berhasil diunduh.");
+  };
+
+  const handleDownloadPdf = () => {
+    if (!generatedContent) return;
+    const displayType = activeType.toUpperCase();
+    exportDocumentToPdf({
+      judul: `Draft AI ${displayType}: ${commonParams.topic || "Materi Pembelajaran"}`,
+      konten: generatedContent,
+      jenis: displayType,
+      kelas: commonParams.kelas,
+      elemen: commonParams.elemen,
+      userEmail: user?.email || "yogisuprayogi02@guru.smk.belajar.id"
+    });
+    showToast("Berkas PDF berhasil diunduh.");
   };
 
   // Sidebar assistants catalog config
@@ -911,6 +926,15 @@ export const AiTeachingAssistantView: React.FC<AiTeachingAssistantViewProps> = (
                     title="Unduh Berkas Markdown"
                   >
                     <Download className="h-3.5 w-3.5" />
+                  </button>
+
+                  <button
+                    onClick={handleDownloadPdf}
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[10px] font-bold transition"
+                    title="Unduh Berkas PDF Administrasi Resmi"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>Unduh PDF</span>
                   </button>
 
                   <button
