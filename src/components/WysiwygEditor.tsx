@@ -16,11 +16,9 @@ import {
   Eye,
   Code,
   Palette,
-  Heading1,
-  Heading2,
-  Heading3,
-  Heading,
-  Type
+  Type,
+  Minus,
+  Table
 } from "lucide-react";
 
 // Markdown to HTML conversion
@@ -47,6 +45,13 @@ export function markdownToHtml(md: string): string {
     if (trimmed === "") {
       closeList();
       html += "<p><br></p>";
+      continue;
+    }
+
+    // Horizontal Rule / Pemisah
+    if (trimmed === "---" || trimmed === "***" || trimmed === "___") {
+      closeList();
+      html += "<hr class='my-4 border-t border-slate-200 dark:border-slate-700' />";
       continue;
     }
     
@@ -141,6 +146,9 @@ export function htmlToMarkdown(html: string): string {
     const tagName = element.tagName.toLowerCase();
     
     switch (tagName) {
+      case "hr":
+        markdown += "\n\n---\n\n";
+        break;
       case "h1":
         markdown += "\n# ";
         element.childNodes.forEach(child => processNode(child));
@@ -270,6 +278,7 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   const [isVisual, setIsVisual] = useState<boolean>(true);
   const [showColorPicker, setShowColorPicker] = useState<boolean>(false);
   const editorRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   // Keep track of internal content to avoid cursor jumps
   const internalHtmlRef = useRef<string>("");
@@ -310,6 +319,43 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     handleVisualChange();
   };
 
+  const insertMarkdownText = (prefix: string, suffix: string = "") => {
+    if (!textareaRef.current) return;
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = value.substring(start, end);
+    
+    let replacement = "";
+    if (selectedText) {
+      replacement = `${prefix}${selectedText}${suffix}`;
+    } else {
+      const placeholderText = prefix.startsWith("#")
+        ? "Judul"
+        : prefix.includes("**")
+        ? "Teks Tebal"
+        : prefix.includes("*")
+        ? "Teks Miring"
+        : prefix.includes("-")
+        ? "Poin Daftar"
+        : prefix.includes("1.")
+        ? "Poin Angka"
+        : "";
+      replacement = `${prefix}${placeholderText}${suffix}`;
+    }
+
+    const newValue = value.substring(0, start) + replacement + value.substring(end);
+    onChange(newValue);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + prefix.length,
+        start + prefix.length + (selectedText ? selectedText.length : 0)
+      );
+    }, 30);
+  };
+
   const insertLink = () => {
     const url = prompt("Masukkan URL Tautan:", "https://");
     if (url) {
@@ -324,12 +370,9 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
 
   const toggleMode = () => {
     if (isVisual) {
-      // Transitioning to markdown code view
       setIsVisual(false);
     } else {
-      // Transitioning back to visual view
       setIsVisual(true);
-      // Wait for DOM update to repopulate content
       setTimeout(() => {
         if (editorRef.current) {
           const html = markdownToHtml(value);
@@ -358,7 +401,7 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     <div className="w-full border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-hidden shadow-sm bg-white dark:bg-slate-900 transition flex flex-col text-left">
       {/* TOOLBAR */}
       <div className="flex flex-wrap items-center justify-between border-b border-slate-200 dark:border-slate-800 p-2 bg-slate-50 dark:bg-slate-950/40 gap-2 select-none">
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1.5">
           {isVisual ? (
             <>
               {/* Text formatting group */}
@@ -461,6 +504,18 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
                 </button>
               </div>
 
+              {/* Divider & Table */}
+              <div className="flex items-center bg-slate-200/50 dark:bg-slate-800/50 rounded-lg p-0.5">
+                <button
+                  type="button"
+                  onClick={() => execCommand("insertHorizontalRule")}
+                  className="p-1.5 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md transition"
+                  title="Garis Pemisah (Horizontal Rule)"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
               {/* Alignments */}
               <div className="flex items-center bg-slate-200/50 dark:bg-slate-800/50 rounded-lg p-0.5">
                 <button
@@ -548,8 +603,104 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
               </div>
             </>
           ) : (
-            <div className="flex items-center px-2 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-mono font-bold rounded-lg uppercase">
-              Mode Raw Markdown
+            /* Quick Access Format Toolbar for Raw Markdown Mode */
+            <div className="flex flex-wrap items-center gap-1 text-xs">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                Akses Cepat Format:
+              </span>
+              <div className="flex items-center bg-slate-200/60 dark:bg-slate-800/60 rounded-lg p-0.5 gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => insertMarkdownText("\n# ", "\n")}
+                  className="px-2 py-1 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-md transition text-xs"
+                  title="Heading 1"
+                >
+                  H1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdownText("\n## ", "\n")}
+                  className="px-2 py-1 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-md transition text-xs"
+                  title="Heading 2"
+                >
+                  H2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdownText("\n### ", "\n")}
+                  className="px-2 py-1 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-md transition text-xs"
+                  title="Heading 3"
+                >
+                  H3
+                </button>
+              </div>
+
+              <div className="flex items-center bg-slate-200/60 dark:bg-slate-800/60 rounded-lg p-0.5 gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => insertMarkdownText("**", "**")}
+                  className="p-1.5 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md transition"
+                  title="Tebal (**tebal**)"
+                >
+                  <Bold className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdownText("*", "*")}
+                  className="p-1.5 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md transition"
+                  title="Miring (*miring*)"
+                >
+                  <Italic className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <div className="flex items-center bg-slate-200/60 dark:bg-slate-800/60 rounded-lg p-0.5 gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => insertMarkdownText("\n- ", "")}
+                  className="p-1.5 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md transition"
+                  title="Daftar Bulatan (- Poin)"
+                >
+                  <List className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdownText("\n1. ", "")}
+                  className="p-1.5 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md transition"
+                  title="Daftar Angka (1. Poin)"
+                >
+                  <ListOrdered className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdownText("\n> ", "\n")}
+                  className="p-1.5 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md transition"
+                  title="Kutipan (> Catatan)"
+                >
+                  <Quote className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <div className="flex items-center bg-slate-200/60 dark:bg-slate-800/60 rounded-lg p-0.5 gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => insertMarkdownText("\n\n---\n\n", "")}
+                  className="px-2 py-1 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md transition text-[11px] font-bold flex items-center gap-1"
+                  title="Pemisah / Garis Horizontal"
+                >
+                  <Minus className="h-3 w-3" />
+                  <span>Pemisah</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdownText("\n| Kolom 1 | Kolom 2 |\n| --- | --- |\n| Data 1 | Data 2 |\n", "")}
+                  className="px-2 py-1 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md transition text-[11px] font-bold flex items-center gap-1"
+                  title="Tabel Contoh"
+                >
+                  <Table className="h-3 w-3" />
+                  <span>Tabel</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -558,8 +709,8 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
         <button
           type="button"
           onClick={toggleMode}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200/60 dark:bg-slate-800/60 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition"
-          title={isVisual ? "Ganti ke Kode Markdown" : "Ganti ke Visual WYSIWYG"}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200/60 dark:bg-slate-800/60 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition shrink-0"
+          title={isVisual ? "Ganti ke Kode Markdown" : "Ganti ke Editor Visual"}
         >
           {isVisual ? (
             <>
@@ -592,6 +743,7 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
           />
         ) : (
           <textarea
+            ref={textareaRef}
             value={value}
             onChange={handleMarkdownChange}
             placeholder="Tulis format markdown di sini..."
@@ -606,7 +758,7 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
 
       {/* FOOTER STATS */}
       <div className="flex items-center justify-between px-4 py-2 border-t border-slate-150 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/10 text-[10px] font-mono text-slate-500">
-        <span>WYSIWYG Editor Aktif</span>
+        <span>WYSIWYG / Markdown Editor</span>
         <div className="flex gap-3">
           <span>{wordCount} Kata</span>
           <span>{charCount} Karakter</span>
@@ -623,7 +775,6 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
         .dark div[contenteditable]:empty:before {
           color: #475569;
         }
-        /* Custom contentEditable inner styles to look great */
         div[contenteditable] h1 {
           font-size: 1.5rem;
           font-weight: 700;
@@ -666,3 +817,4 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     </div>
   );
 };
+

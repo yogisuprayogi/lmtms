@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   BookOpen,
   FileText,
@@ -1388,9 +1389,18 @@ export default function App() {
 
         {/* COMPONENT BODY */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {/* ======================================= */}
-          {/* TAB 1: DASHBOARD ANALITIKA & RINGKASAN */}
-          {/* ======================================= */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="w-full h-full"
+            >
+              {/* ======================================= */}
+              {/* TAB 1: DASHBOARD ANALITIKA & RINGKASAN */}
+              {/* ======================================= */}
           {currentTab === "dashboard" && (
             <AnalitikaView user={user} analitika={analitika} onRefresh={fetchAnalitika} />
           )}
@@ -2217,6 +2227,8 @@ export default function App() {
               onAddNotification={handleAddNotification}
             />
           )}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 
