@@ -70,10 +70,23 @@ import { MateriView } from "./components/MateriView";
 import { TugasView } from "./components/TugasView";
 
 export default function App() {
+  // Default demo user (Guru Pengampu) if no session saved
+  const defaultGuruUser: User = {
+    id: "u1",
+    username: "yogi",
+    nama: "Yogi Suprayogi, S.Kom.",
+    role: "GURU",
+    nip: "19850615 201001 1 012",
+    email: "yogisuprayogi02@guru.smk.belajar.id"
+  };
+
   // Auth states
   const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem("lmtms_user");
-    return saved ? JSON.parse(saved) : null;
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return defaultGuruUser;
   });
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");

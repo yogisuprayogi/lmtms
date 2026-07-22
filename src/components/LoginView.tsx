@@ -120,7 +120,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                placeholder=""
+                placeholder="Masukkan username"
                 className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
@@ -132,7 +132,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder=""
+                placeholder="Masukkan password"
                 className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
@@ -147,12 +147,45 @@ export const LoginView: React.FC<LoginViewProps> = ({
             <button
               type="submit"
               disabled={isLoadingAuth}
-              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
+              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition cursor-pointer"
               id="btn-login-submit"
             >
               {isLoadingAuth ? "Menghubungkan..." : "Masuk ke Dashboard"}
             </button>
           </form>
+
+          {/* Quick Login Section */}
+          <div className="mt-6 border-t border-slate-100 pt-5">
+            <p className="text-xs font-bold text-slate-500 text-center uppercase tracking-wider mb-3">
+              Uji Coba Langsung (Akun Demo)
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => quickLogin("GURU")}
+                className="px-2 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1 cursor-pointer"
+              >
+                <span className="text-[10px] text-indigo-500 font-normal">Peran</span>
+                <span>👨‍🏫 Guru</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => quickLogin("SISWA")}
+                className="px-2 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1 cursor-pointer"
+              >
+                <span className="text-[10px] text-emerald-500 font-normal">Peran</span>
+                <span>👨‍🎓 Siswa</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => quickLogin("ADMIN")}
+                className="px-2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1 cursor-pointer"
+              >
+                <span className="text-[10px] text-slate-500 font-normal">Peran</span>
+                <span>⚙️ Admin</span>
+              </button>
+            </div>
+          </div>
 
           <div className="mt-4 text-center">
             <p className="text-xs text-slate-400 font-medium">

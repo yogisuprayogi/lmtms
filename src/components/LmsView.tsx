@@ -5223,6 +5223,161 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
           </div>
         )}
 
+        {/* MODAL: KUSTUMISASI TEMPLATE SEKOLAH & KOP SURAT */}
+        {isSchoolTemplateModalOpen && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-2xl w-full flex flex-col shadow-2xl border border-slate-200 my-auto overflow-hidden animate-fade-in">
+              <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-amber-600" />
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-sm">Pengaturan Template Standar Sekolah</h3>
+                    <p className="text-[11px] text-slate-500">Sesuaikan metadata Kop Surat & Penandatangan untuk Ekspor Modul Ajar</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsSchoolTemplateModalOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+                {/* Header Instansi / Dinas */}
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">Header Dinas / Instansi</label>
+                  <input
+                    type="text"
+                    value={schoolTemplate.provinsiDinas}
+                    onChange={(e) => setSchoolTemplate({ ...schoolTemplate, provinsiDinas: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg p-2 focus:outline-blue-500"
+                    placeholder="Contoh: PEMERINTAH PROVINSI JAWA BARAT - DINAS PENDIDIKAN"
+                  />
+                </div>
+
+                {/* Nama Sekolah & Alamat */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">Nama Satuan Pendidikan (Sekolah)</label>
+                    <input
+                      type="text"
+                      value={schoolTemplate.namaSekolah}
+                      onChange={(e) => setSchoolTemplate({ ...schoolTemplate, namaSekolah: e.target.value })}
+                      className="w-full border border-slate-200 rounded-lg p-2 font-bold focus:outline-blue-500"
+                      placeholder="SMA NEGERI 2 CIAMIS"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">Kota / Kabupaten</label>
+                    <input
+                      type="text"
+                      value={schoolTemplate.kotaKabupaten}
+                      onChange={(e) => setSchoolTemplate({ ...schoolTemplate, kotaKabupaten: e.target.value })}
+                      className="w-full border border-slate-200 rounded-lg p-2 focus:outline-blue-500"
+                      placeholder="Ciamis"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">Alamat Lengkap Sekolah</label>
+                  <input
+                    type="text"
+                    value={schoolTemplate.alamatSekolah}
+                    onChange={(e) => setSchoolTemplate({ ...schoolTemplate, alamatSekolah: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg p-2 focus:outline-blue-500"
+                    placeholder="Jl. Ir. H. Juanda No. 177 Ciamis"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">Kontak (Telepon & Email)</label>
+                    <input
+                      type="text"
+                      value={schoolTemplate.teleponEmail}
+                      onChange={(e) => setSchoolTemplate({ ...schoolTemplate, teleponEmail: e.target.value })}
+                      className="w-full border border-slate-200 rounded-lg p-2 focus:outline-blue-500"
+                      placeholder="Telp: (0265) 771032 • Email: info@sman2ciamis.sch.id"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-bold mb-1">Tahun Pelajaran</label>
+                    <input
+                      type="text"
+                      value={schoolTemplate.tahunPelajaran}
+                      onChange={(e) => setSchoolTemplate({ ...schoolTemplate, tahunPelajaran: e.target.value })}
+                      className="w-full border border-slate-200 rounded-lg p-2 focus:outline-blue-500 font-mono font-bold"
+                      placeholder="2025/2026"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-200 pt-3">
+                  <h4 className="font-bold text-slate-800 text-xs mb-3">Informasi Penandatangan Dokumen</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <span className="font-bold text-slate-700 block text-[11px] uppercase">Kepala Sekolah</span>
+                      <div>
+                        <label className="block text-[10px] text-slate-500">Nama & Gelar</label>
+                        <input
+                          type="text"
+                          value={schoolTemplate.namaKepalaSekolah}
+                          onChange={(e) => setSchoolTemplate({ ...schoolTemplate, namaKepalaSekolah: e.target.value })}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-1.5 focus:outline-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-500">NIP Kepala Sekolah</label>
+                        <input
+                          type="text"
+                          value={schoolTemplate.nipKepalaSekolah}
+                          onChange={(e) => setSchoolTemplate({ ...schoolTemplate, nipKepalaSekolah: e.target.value })}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-1.5 font-mono focus:outline-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <span className="font-bold text-slate-700 block text-[11px] uppercase">Guru Mata Pelajaran</span>
+                      <div>
+                        <label className="block text-[10px] text-slate-500">Nama Guru Pengampu</label>
+                        <input
+                          type="text"
+                          value={schoolTemplate.namaGuru}
+                          onChange={(e) => setSchoolTemplate({ ...schoolTemplate, namaGuru: e.target.value })}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-1.5 focus:outline-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-500">NIP Guru</label>
+                        <input
+                          type="text"
+                          value={schoolTemplate.nipGuru}
+                          onChange={(e) => setSchoolTemplate({ ...schoolTemplate, nipGuru: e.target.value })}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-1.5 font-mono focus:outline-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                <span className="text-[11px] text-emerald-700 font-medium">✓ Tersimpan otomatis untuk seluruh dokumen</span>
+                <button
+                  type="button"
+                  onClick={() => setIsSchoolTemplateModalOpen(false)}
+                  className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition cursor-pointer shadow-xs"
+                >
+                  Selesai & Simpan Template
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
