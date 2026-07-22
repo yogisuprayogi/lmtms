@@ -287,6 +287,16 @@ export default function App() {
     }, 4000);
   };
 
+  // Student role protection guard
+  useEffect(() => {
+    if (user?.role === "SISWA") {
+      const teacherOnlyTabs = ["teaching", "perangkat", "ai_assistant", "absensi", "administrasi", "logs"];
+      if (teacherOnlyTabs.includes(currentTab)) {
+        setCurrentTab("dashboard");
+      }
+    }
+  }, [user, currentTab]);
+
   const handleAddNotification = (title: string, message: string, type: "info" | "alert" = "info") => {
     const newNotif = {
       id: Math.random().toString(36).substring(2, 9),

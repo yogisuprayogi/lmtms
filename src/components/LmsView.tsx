@@ -412,7 +412,7 @@ interface LmsViewProps {
 
 export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
   // Navigation tabs (11 elements)
-  const tabs = [
+  const allTabs = [
     { id: "cp", label: "CP (Capaian)", icon: Award, color: "text-rose-500 bg-rose-50" },
     { id: "atp", label: "ATP (Alur)", icon: Milestone, color: "text-amber-500 bg-amber-50" },
     { id: "modul", label: "Modul Ajar", icon: FileText, color: "text-blue-500 bg-blue-50" },
@@ -426,7 +426,16 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
     { id: "versioning", label: "Versioning", icon: History, color: "text-slate-500 bg-slate-50" }
   ];
 
-  const [activeTab, setActiveTab] = useState<string>("deep_learning");
+  const tabs = React.useMemo(() => {
+    if (user?.role === "SISWA") {
+      return allTabs.filter((t) => ["materi", "buku", "repository", "cp", "atp"].includes(t.id));
+    }
+    return allTabs;
+  }, [user]);
+
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return user?.role === "SISWA" ? "materi" : "deep_learning";
+  });
 
   // State Management for individual sub-views
   const [atpList, setAtpList] = useState(() => {
@@ -2216,79 +2225,81 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Form Input ATP */}
-              <div className="lg:col-span-4 bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
-                <h3 className="font-display font-bold text-slate-800 text-xs uppercase tracking-wider">Tambah Alur (ATP) Baru</h3>
-                <form onSubmit={handleAddAtp} className="space-y-3">
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Kode ATP</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: ATP-10.1"
-                      value={atpForm.kode}
-                      onChange={(e) => setAtpForm({...atpForm, kode: e.target.value})}
-                      className="w-full text-xs border border-slate-200 p-2 rounded bg-white"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
+              {(user?.role === "GURU" || user?.role === "ADMIN") && (
+                <div className="lg:col-span-4 bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
+                  <h3 className="font-display font-bold text-slate-800 text-xs uppercase tracking-wider">Tambah Alur (ATP) Baru</h3>
+                  <form onSubmit={handleAddAtp} className="space-y-3">
                     <div>
-                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Elemen</label>
-                      <select
-                        value={atpForm.elemen}
-                        onChange={(e) => setAtpForm({...atpForm, elemen: e.target.value})}
-                        className="w-full text-xs border border-slate-200 p-2 rounded bg-white font-semibold"
-                      >
-                        <option value="BK">BK (Berpikir Komputasional)</option>
-                        <option value="AP">AP (Algoritma Pemrograman)</option>
-                        <option value="AD">AD (Analisis Data)</option>
-                        <option value="JKI">JKI (Jaringan Komputer)</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Kelas</label>
-                      <select
-                        value={atpForm.kelas}
-                        onChange={(e) => setAtpForm({...atpForm, kelas: e.target.value})}
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Kode ATP</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Contoh: ATP-10.1"
+                        value={atpForm.kode}
+                        onChange={(e) => setAtpForm({...atpForm, kode: e.target.value})}
                         className="w-full text-xs border border-slate-200 p-2 rounded bg-white"
-                      >
-                        <option value="X">Kelas X</option>
-                        <option value="XI">Kelas XI</option>
-                        <option value="XII">Kelas XII</option>
-                      </select>
+                      />
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Alokasi Waktu</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Misal: 8 JP"
-                      value={atpForm.alokasi}
-                      onChange={(e) => setAtpForm({...atpForm, alokasi: e.target.value})}
-                      className="w-full text-xs border border-slate-200 p-2 rounded bg-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5 text-left">
-                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Rumusan Tujuan Pembelajaran</label>
-                    <WysiwygEditor
-                      id="lms-atp-tujuan-editor"
-                      value={atpForm.tujuan}
-                      onChange={(val) => setAtpForm({...atpForm, tujuan: val})}
-                      placeholder="Rumuskan tujuan pembelajaran..."
-                      heightClass="min-h-[140px]"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded text-xs transition"
-                  >
-                    + Daftarkan Alur ATP
-                  </button>
-                </form>
-              </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Elemen</label>
+                        <select
+                          value={atpForm.elemen}
+                          onChange={(e) => setAtpForm({...atpForm, elemen: e.target.value})}
+                          className="w-full text-xs border border-slate-200 p-2 rounded bg-white font-semibold"
+                        >
+                          <option value="BK">BK (Berpikir Komputasional)</option>
+                          <option value="AP">AP (Algoritma Pemrograman)</option>
+                          <option value="AD">AD (Analisis Data)</option>
+                          <option value="JKI">JKI (Jaringan Komputer)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Kelas</label>
+                        <select
+                          value={atpForm.kelas}
+                          onChange={(e) => setAtpForm({...atpForm, kelas: e.target.value})}
+                          className="w-full text-xs border border-slate-200 p-2 rounded bg-white"
+                        >
+                          <option value="X">Kelas X</option>
+                          <option value="XI">Kelas XI</option>
+                          <option value="XII">Kelas XII</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Alokasi Waktu</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Misal: 8 JP"
+                        value={atpForm.alokasi}
+                        onChange={(e) => setAtpForm({...atpForm, alokasi: e.target.value})}
+                        className="w-full text-xs border border-slate-200 p-2 rounded bg-white"
+                      />
+                    </div>
+                    <div className="space-y-1.5 text-left">
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Rumusan Tujuan Pembelajaran</label>
+                      <WysiwygEditor
+                        id="lms-atp-tujuan-editor"
+                        value={atpForm.tujuan}
+                        onChange={(val) => setAtpForm({...atpForm, tujuan: val})}
+                        placeholder="Rumuskan tujuan pembelajaran..."
+                        heightClass="min-h-[140px]"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded text-xs transition"
+                    >
+                      + Daftarkan Alur ATP
+                    </button>
+                  </form>
+                </div>
+              )}
 
               {/* Timeline ATP */}
-              <div className="lg:col-span-8 space-y-3">
+              <div className={user?.role === "SISWA" ? "lg:col-span-12 space-y-3" : "lg:col-span-8 space-y-3"}>
                 <h3 className="font-display font-bold text-slate-800 text-sm">Alur Berjalan (Fase E & F)</h3>
                 <div className="space-y-3 relative border-l border-amber-200 pl-4 ml-2">
                   {atpList.map((item) => (
@@ -2310,15 +2321,17 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
                       <p className="text-xs text-slate-700 leading-relaxed font-medium">{item.tujuan}</p>
                       <div className="flex justify-between items-center pt-2 text-[10px] text-slate-400">
                         <span>Sasaran: Kelas {item.kelas}</span>
-                        <button
-                          onClick={() => {
-                            setAtpList(atpList.filter(a => a.id !== item.id));
-                            logVersion("atp-list", "ATP (Alur Tujuan Pembelajaran)", `Menghapus item ${item.kode}`);
-                          }}
-                          className="text-slate-400 hover:text-red-500 transition p-1"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {(user?.role === "GURU" || user?.role === "ADMIN") && (
+                          <button
+                            onClick={() => {
+                              setAtpList(atpList.filter(a => a.id !== item.id));
+                              logVersion("atp-list", "ATP (Alur Tujuan Pembelajaran)", `Menghapus item ${item.kode}`);
+                            }}
+                            className="text-slate-400 hover:text-red-500 transition p-1"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

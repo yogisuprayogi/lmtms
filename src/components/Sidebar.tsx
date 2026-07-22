@@ -501,18 +501,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="font-bold">LMS (Learning System)</span>
           </button>
 
-          <button
-            onClick={() => changeTab("teaching")}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
-              currentTab === "teaching"
-                ? "bg-indigo-600 text-white font-semibold"
-                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-            }`}
-            id="nav-link-teaching"
-          >
-            <ClipboardCheck className="h-4 w-4 text-emerald-400 font-bold" />
-            <span className="font-bold">Teaching Management</span>
-          </button>
+          {(user.role === "GURU" || user.role === "ADMIN") && (
+            <button
+              onClick={() => changeTab("teaching")}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                currentTab === "teaching"
+                  ? "bg-indigo-600 text-white font-semibold"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+              }`}
+              id="nav-link-teaching"
+            >
+              <ClipboardCheck className="h-4 w-4 text-emerald-400 font-bold" />
+              <span className="font-bold">Teaching Management</span>
+            </button>
+          )}
 
           {(user.role === "GURU" || user.role === "ADMIN") && (
             <button

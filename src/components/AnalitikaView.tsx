@@ -377,13 +377,15 @@ Susunlah dokumen Analisis Refleksi Guru Terpadu menggunakan rumus 8-3-3-4 dengan
         </div>
         <div className="max-w-3xl relative z-10 space-y-2">
           <span className="bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 font-semibold px-3 py-1 rounded-full text-[10px] tracking-wider uppercase">
-            Analisis Evaluasi & Reporting Terpadu
+            {user.role === "SISWA" ? "Monitoring Belajar Mandiri" : "Analisis Evaluasi & Reporting Terpadu"}
           </span>
           <h2 className="text-2xl sm:text-3xl font-display font-bold mt-2 mb-1 tracking-tight">
-            Dashboard & Laporan Kinerja Akademik
+            {user.role === "SISWA" ? "Dashboard Progress Belajar Siswa" : "Dashboard & Laporan Kinerja Akademik"}
           </h2>
           <p className="text-slate-300 text-xs leading-relaxed max-w-2xl">
-            Sistem evaluasi komprehensif Kurikulum Merdeka LMTMS. Kelola pelaporan, monitoring keaktifan siswa luring, ekspor draf rapor, audit kesenjangan materi, dan impor lembar penilaian fisik secara instan.
+            {user.role === "SISWA"
+              ? "Pantau perkembangan akademik mandiri Kurikulum Merdeka, pengumpulan tugas, kehadiran kelas, dan ketercapaian 8 elemen Informatika."
+              : "Sistem evaluasi komprehensif Kurikulum Merdeka LMTMS. Kelola pelaporan, monitoring keaktifan siswa luring, ekspor draf rapor, audit kesenjangan materi, dan impor lembar penilaian fisik secara instan."}
           </p>
         </div>
       </div>
@@ -487,44 +489,48 @@ Susunlah dokumen Analisis Refleksi Guru Terpadu menggunakan rumus 8-3-3-4 dengan
           id="tab-monitoring"
         >
           <Clock className="h-4 w-4" />
-          <span>Monitoring Real-Time</span>
+          <span>{user.role === "SISWA" ? "Progres Belajar Saya" : "Monitoring Real-Time"}</span>
         </button>
-        <button
-          onClick={() => setActiveSubTab("analitik")}
-          className={`px-4 py-3 font-display font-bold text-xs border-b-2 transition flex items-center gap-2 ${
-            activeSubTab === "analitik"
-              ? "border-indigo-600 text-indigo-600 bg-indigo-50/10"
-              : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
-          }`}
-          id="tab-analitik"
-        >
-          <TrendingUp className="h-4 w-4" />
-          <span>Analitik Diagnostik & AI</span>
-        </button>
-        <button
-          onClick={() => setActiveSubTab("ekspor")}
-          className={`px-4 py-3 font-display font-bold text-xs border-b-2 transition flex items-center gap-2 ${
-            activeSubTab === "ekspor"
-              ? "border-indigo-600 text-indigo-600 bg-indigo-50/10"
-              : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
-          }`}
-          id="tab-ekspor"
-        >
-          <Download className="h-4 w-4" />
-          <span>Ekspor Laporan</span>
-        </button>
-        <button
-          onClick={() => setActiveSubTab("impor")}
-          className={`px-4 py-3 font-display font-bold text-xs border-b-2 transition flex items-center gap-2 ${
-            activeSubTab === "impor"
-              ? "border-indigo-600 text-indigo-600 bg-indigo-50/10"
-              : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
-          }`}
-          id="tab-impor"
-        >
-          <Upload className="h-4 w-4" />
-          <span>Impor Data Mandiri</span>
-        </button>
+        {(user.role === "GURU" || user.role === "ADMIN") && (
+          <>
+            <button
+              onClick={() => setActiveSubTab("analitik")}
+              className={`px-4 py-3 font-display font-bold text-xs border-b-2 transition flex items-center gap-2 ${
+                activeSubTab === "analitik"
+                  ? "border-indigo-600 text-indigo-600 bg-indigo-50/10"
+                  : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
+              }`}
+              id="tab-analitik"
+            >
+              <TrendingUp className="h-4 w-4" />
+              <span>Analitik Diagnostik & AI</span>
+            </button>
+            <button
+              onClick={() => setActiveSubTab("ekspor")}
+              className={`px-4 py-3 font-display font-bold text-xs border-b-2 transition flex items-center gap-2 ${
+                activeSubTab === "ekspor"
+                  ? "border-indigo-600 text-indigo-600 bg-indigo-50/10"
+                  : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
+              }`}
+              id="tab-ekspor"
+            >
+              <Download className="h-4 w-4" />
+              <span>Ekspor Laporan</span>
+            </button>
+            <button
+              onClick={() => setActiveSubTab("impor")}
+              className={`px-4 py-3 font-display font-bold text-xs border-b-2 transition flex items-center gap-2 ${
+                activeSubTab === "impor"
+                  ? "border-indigo-600 text-indigo-600 bg-indigo-50/10"
+                  : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
+              }`}
+              id="tab-impor"
+            >
+              <Upload className="h-4 w-4" />
+              <span>Impor Data Mandiri</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* TAB CONTENT VIEWS */}
@@ -707,11 +713,19 @@ Susunlah dokumen Analisis Refleksi Guru Terpadu menggunakan rumus 8-3-3-4 dengan
             <div>
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
                 <Clock className="h-4 w-4 text-indigo-500" />
-                <span>Log Monitoring Tugas & Absensi</span>
+                <span>{user.role === "SISWA" ? "Riwayat Tugas Saya" : "Log Monitoring Tugas & Absensi"}</span>
               </h3>
               <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
-                {recentSubmissions.length > 0 ? (
-                  recentSubmissions.map((sub: any) => (
+                {(() => {
+                  const studentLogs = user.role === "SISWA"
+                    ? recentSubmissions.filter((sub: any) => sub.siswaNama?.toLowerCase().includes(user.nama?.toLowerCase()) || sub.siswaId === user.id)
+                    : recentSubmissions;
+
+                  if (studentLogs.length === 0) {
+                    return <div className="text-center py-10 text-slate-400 text-xs">Belum ada pengumpulan aktivitas terbaru.</div>;
+                  }
+
+                  return studentLogs.map((sub: any) => (
                     <div key={sub.id} className="p-3 bg-slate-50 hover:bg-slate-100/70 border border-slate-100 rounded-xl transition flex flex-col gap-1 text-[11px] relative">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-800">{sub.siswaNama}</span>
@@ -727,10 +741,8 @@ Susunlah dokumen Analisis Refleksi Guru Terpadu menggunakan rumus 8-3-3-4 dengan
                         )}
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-10 text-slate-400 text-xs">Belum ada pengumpulan aktivitas terbaru hari ini.</div>
-                )}
+                  ));
+                })()}
               </div>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
@@ -789,8 +801,22 @@ Susunlah dokumen Analisis Refleksi Guru Terpadu menggunakan rumus 8-3-3-4 dengan
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredStudents.length > 0 ? (
-                      filteredStudents.map((s) => {
+                    {(() => {
+                      const displayStudentsList = user.role === "SISWA"
+                        ? filteredStudents.filter((s) => s.id === user.id || s.nama?.toLowerCase().includes(user.nama?.toLowerCase()))
+                        : filteredStudents;
+
+                      if (displayStudentsList.length === 0) {
+                        return (
+                          <tr>
+                            <td colSpan={7} className="text-center py-6 text-slate-400 text-xs">
+                              Data siswa tidak ditemukan.
+                            </td>
+                          </tr>
+                        );
+                      }
+
+                      return displayStudentsList.map((s) => {
                         const hasRemedial = s.avgScore > 0 && s.avgScore < 75;
                         const hasAbsentWarning = s.attendanceRate < 80;
                         return (
@@ -842,12 +868,8 @@ Susunlah dokumen Analisis Refleksi Guru Terpadu menggunakan rumus 8-3-3-4 dengan
                             </td>
                           </tr>
                         );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={7} className="p-8 text-center text-slate-400">Tidak ada data siswa ditemukan.</td>
-                      </tr>
-                    )}
+                      });
+                    })()}
                   </tbody>
                 </table>
               </div>
