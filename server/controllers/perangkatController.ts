@@ -144,19 +144,111 @@ export const generatePerangkat = async (req: Request, res: Response) => {
   4. Empat (4) Kerangka Pembelajaran (Komponen ekosistem):
      - Praktik Pedagogis, Kemitraan Belajar, Lingkungan Belajar, Pemanfaatan Teknologi Digital.`;
 
-  if (jenisDokumen === "RPP_LENGKAP" || jenisDokumen === "RPP") {
-    systemInstruction += `\n\nKHUSUS UNTUK RPP LENGKAP: Dokumen yang Anda buat HARUS memuat komponen utama berikut secara sangat detail dan terstruktur dengan mengintegrasikan rumus 8-3-3-4 di atas:
-    1. **Identitas Sekolah & Elemen**: Mencakup alokasi waktu dan fokus materi.
-    2. **Tujuan Pembelajaran (TP) Holistik**: Menjabarkan TP kognitif, psikomotorik, dan afektif yang selaras dengan 8 Dimensi Profil Lulusan (terutama Penalaran Kritis, Kreativitas, Kolaborasi, Kemandirian, Komunikasi Efektif).
-    3. **Tiga (3) Prinsip Pembelajaran Terintegrasi**: Deskripsikan bagaimana sesi ini dirancang agar Mindful (Berkesadaran), Meaningful (Bermakna), dan Joyful (Menggembirakan).
-    4. **Langkah-langkah Kegiatan Pembelajaran Berbasis Tiga (3) Pengalaman Belajar**:
-       - Sesi Pendahuluan (Orientasi & Apersepsi untuk membangun Pemahaman).
-       - Sesi Inti (Aplikasi PBL/PjBL menggunakan Praktik Pedagogis interaktif dan Teknologi Digital sebagai alat investigasi - Penerapan).
-       - Sesi Penutup (Penilaian mandiri, kesimpulan, dan umpan balik - Refleksi).
-     5. **Empat (4) Kerangka Pembelajaran & Dukungan Ekosistem**: Penjelasan singkat mengenai Praktik Pedagogis yang dipakai, Kemitraan Belajar yang dilibatkan, Lingkungan Belajar yang dimanfaatkan, serta Teknologi Digital yang digunakan.
-    6. **Asesmen Formatif (Penilaian Proses)**: Rubrik penilaian sikap (8 Dimensi Profil Lulusan) dan rubrik kinerja kelompok/praktikum secara lengkap (berupa tabel kriteria skor 1-4).`;
-  } else if (jenisDokumen === "MODUL") {
-    systemInstruction += `\n\nKHUSUS UNTUK MODUL AJAR: Buatlah Modul Ajar Kurikulum Merdeka yang lengkap dengan komponen: Identitas, Pemahaman Bermakna, Pertanyaan Pemantik, Kegiatan Pembelajaran (Pendahuluan, Inti, Penutup) mengintegrasikan model pembelajaran yang relevan, serta instrumen refleksi dan asesmen.`;
+  if (jenisDokumen === "RPP_LENGKAP" || jenisDokumen === "RPP" || jenisDokumen === "MODUL") {
+    systemInstruction += `\n\nSANGAT PENTING - FORMAT BAKU MODUL AJAR (DEEP LEARNING):
+Dokumen Modul Ajar / RPP HARUS mengikuti struktur baku resmi Kurikulum Merdeka (Deep Learning: Berkesadaran, Bermakna, Menggembirakan) persis berikut ini:
+
+MODUL AJAR INFORMATIKA - DEEP LEARNING
+Topik: [Judul Topik Pembelajaran] ([Alokasi JP])
+
+A. Informasi Umum
+Satuan Pendidikan : SMA Negeri 2 Ciamis (atau nama sekolah)
+Mata Pelajaran : Informatika
+Fase / Kelas : [Fase E/F / Kelas X/XI/XII]
+Elemen : [Nama Elemen]
+Alokasi Waktu : [3 JP x 45 menit (1 pertemuan)]
+Pendekatan : Pembelajaran Mendalam (Deep Learning): Berkesadaran, Bermakna, Menggembirakan.
+Tahun Penyusunan : 2026
+
+1. Capaian Pembelajaran
+[Isi CP resmi dari BSKAP sesuai elemen]
+
+2. Tujuan Pembelajaran
+1. [Tujuan 1]
+2. [Tujuan 2]
+3. [Tujuan 3]
+
+3. Kompetensi Awal
+a. [Kompetensi awal 1]
+b. [Kompetensi awal 2]
+
+4. Dimensi Profil Lulusan
+Pertemuan ini menguatkan dimensi:
+a. Penalaran Kritis - [penjelasan]
+b. Kreativitas - [penjelasan]
+c. Kolaborasi - [penjelasan]
+d. Kemandirian - [penjelasan]
+
+5. Tiga Prinsip Pembelajaran Mendalam pada Pertemuan Ini
+| Prinsip | Makna | Penerapan pada Pertemuan Ini |
+| Berkesadaran (Mindful) | [Makna] | [Penerapan] |
+| Bermakna (Meaningful) | [Makna] | [Penerapan] |
+| Menggembirakan (Joyful) | [Makna] | [Penerapan] |
+
+6. Kerangka Pembelajaran
+| Komponen | Penerapan |
+| Praktik Pedagogis | [Penerapan] |
+| Kemitraan Pembelajaran | [Penerapan] |
+| Lingkungan Pembelajaran | [Penerapan] |
+| Pemanfaatan Digital | [Penerapan] |
+
+7. Sarana dan Prasarana
+a. [Sarana 1]
+b. [Sarana 2]
+c. [Sarana 3]
+
+8. Target Peserta Didik
+Peserta didik reguler kelas [X/XI/XII], tanpa kesulitan belajar khusus.
+
+B. Komponen Inti
+1. Pemahaman Bermakna
+[Teks Pemahaman Bermakna]
+
+2. Pertanyaan Pemantik
+a. [Pertanyaan 1]
+b. [Pertanyaan 2]
+c. [Pertanyaan 3]
+
+3. Pengalaman Belajar
+| Tahap | Aktivitas Pembelajaran | Waktu |
+| Pendahuluan | [Langkah-langkah dengan penanda [Berkesadaran], [Bermakna], atau [Menggembirakan]] | 15 menit |
+| Memahami | [Langkah-langkah dengan penanda] | 35 menit |
+| Mengaplikasi | [Langkah-langkah dengan penanda] | 50 menit |
+| Merefleksi | [Langkah-langkah dengan penanda] | 20 menit |
+| Penutup | [Langkah-langkah dengan penanda] | 15 menit |
+
+4. Asesmen
+| Jenis | Bentuk dan Waktu Pelaksanaan |
+| Assessment as Learning (Awal & sepanjang proses) | [Bentuk] |
+| Assessment for Learning (Selama proses) | [Bentuk] |
+| Assessment of Learning (Akhir pertemuan) | [Bentuk] |
+
+Rubrik Penilaian Proses (Assessment for Learning)
+| Aspek yang Dinilai | Baik Sekali (86-100) | Baik (71-85) | Perlu Bimbingan (<71) |
+
+Soal Evaluasi Individu (Assessment of Learning)
+| No | Soal |
+Pedoman Penskoran: nomor 1-4 bernilai 20 poin, nomor 5 dinilai berdasarkan kedalaman refleksi.
+
+5. Pengayaan dan Remedial
+Pengayaan: [Penjelasan]
+Remedial: [Penjelasan]
+
+6. Refleksi Peserta Didik dan Guru
+Refleksi Peserta Didik (Assessment as Learning)
+a. [Pertanyaan a]
+b. [Pertanyaan b]
+c. [Pertanyaan c]
+
+Refleksi Guru
+a. [Pertanyaan a]
+b. [Pertanyaan b]
+
+Lampiran 1: Lembar Kerja Peserta Didik (LKPD)
+Lampiran 2: Glosarium
+Lampiran 3: Daftar Pustaka
+Lampiran 4: DAFTAR PERIKSA (SELF-ASSESSMENT) CAPAIAN BELAJAR PESERTA DIDIK
+(Sertakan tabel daftar periksa self-assessment A, B, C, D, dan E)`;
   } else if (jenisDokumen === "ATP") {
     systemInstruction += `\n\nKHUSUS UNTUK ALUR TUJUAN PEMBELAJARAN (ATP): Petakan Capaian Pembelajaran (CP) ke Alur Tujuan Pembelajaran secara logis-kronologis dari materi mendasar ke kompleks, sebutkan alokasi waktu JP, tujuan spesifik, materi pokok, dan indikator penilaian kualitatif.`;
   } else if (jenisDokumen === "SOAL") {
@@ -211,50 +303,125 @@ function generateMockDocument(jenis: string, elemen: string, kelas: string, user
   const fase = kelas === "X" ? "Fase E" : "Fase F";
 
   if (jenis === "RPP_LENGKAP" || jenis === "RPP" || jenis.toLowerCase().includes("rpp") || jenis === "MODUL") {
-    return `# MODUL AJAR INFORMATIKA: ${elemen} - KELAS ${kelas}
-*Rekomendasi Kurikulum Berbasis Kerangka Pembelajaran Mendalam (Deep Learning) - Rumus 8-3-3-4*
-*Dibuat otomatis menggunakan Asisten AI LMTMS pada ${tgl}*
+    return `MODUL AJAR INFORMATIKA - DEEP LEARNING
+Topik: ${userPrompt || "Pengembangan Program Modular dan Struktur Data Abstrak (Stack dan Queue)"} (3 JP)
 
-## 1. IDENTITAS SEKOLAH & ELEMEN
-- **Mata Pelajaran**: Informatika SMA
-- **Kelas / Semester**: Kelas ${kelas} / ${kelas === "X" ? "Fase E (Ganjil/Genap)" : "Fase F (Ganjil/Genap)"}
-- **Elemen Capaian**: ${elemen}
-- **Materi Fokus**: ${userPrompt}
-- **Alokasi Waktu**: 2 JP (2 x 45 Menit)
+A. Informasi Umum
+Satuan Pendidikan : SMA Negeri 2 Ciamis
+Mata Pelajaran : Informatika
+Fase / Kelas : ${fase} / ${kelas}
+Elemen : ${elemen || "Algoritma dan Pemrograman"}
+Alokasi Waktu : 3 JP x 45 menit (1 pertemuan)
+Pendekatan : Pembelajaran Mendalam (Deep Learning): Berkesadaran, Bermakna, Menggembirakan.
+Tahun Penyusunan : 2026
+
+1. Capaian Pembelajaran
+Pada akhir ${fase}, peserta didik mampu bergotong-royong dalam mengembangkan solusi komputasional secara modular dan terstruktur, mampu memahami eksekusi program serta memelihara dan menyempurnakannya, serta mampu menerapkan struktur data dan algoritma secara efisien untuk menyelesaikan masalah nyata.
+
+2. Tujuan Pembelajaran
+1. Peserta didik mampu merancang solusi modular terkait ${userPrompt || "topik pembelajaran"} untuk memecah persoalan kompleks menjadi bagian-bagian kecil yang terstruktur.
+2. Peserta didik mampu mengimplementasikan dan menguji struktur data / skema algoritma sederhana menggunakan bahasa pemrograman tekstual secara logis dan kritis.
+3. Peserta didik mampu menelusuri kesalahan (debugging), menyempurnakan kode program, serta mendokumentasikan proses berpikirnya secara mandiri maupun kolaboratif.
+
+3. Kompetensi Awal
+a. Peserta didik telah memahami dasar-dasar logika komputasional dan operasi sintaksis pemrograman dasar.
+b. Peserta didik telah terbiasa menulis skrip program sederhana menggunakan bahasa pemrograman tekstual (misalnya Python).
+
+4. Dimensi Profil Lulusan
+Pertemuan ini menguatkan dimensi:
+a. Penalaran Kritis - menganalisis struktur program dan menentukan logika yang tepat untuk suatu persoalan.
+b. Kreativitas - merancang solusi yang efisien dan solutif.
+c. Kolaborasi - bekerja sama menyelesaikan LKPD dalam kelompok.
+d. Kemandirian - menyelesaikan latihan praktikum dan refleksi secara individu.
+
+5. Tiga Prinsip Pembelajaran Mendalam pada Pertemuan Ini
+| Prinsip | Makna | Penerapan pada Pertemuan Ini |
+| --- | --- | --- |
+| Berkesadaran (Mindful) | Peserta didik belajar dengan kesadaran penuh terhadap tujuan dan proses berpikirnya, serta dilibatkan dalam menentukan strategi belajarnya sendiri. | Peserta didik diajak menyadari tujuan belajar di awal pertemuan dan menuliskan refleksi metakognitif atas proses berpikirnya saat merancang solusi. |
+| Bermakna (Meaningful) | Materi dikaitkan dengan konteks nyata, relevan, dan dapat diterapkan dalam kehidupan maupun bidang ilmu lain. | Konsep ${userPrompt || "pembelajaran"} dibangun dari studi kasus nyata yang dekat dengan pengalaman peserta didik. |
+| Menggembirakan (Joyful) | Suasana belajar yang positif, menyenangkan, aman secara psikologis, dan membangkitkan rasa ingin tahu. | Kegiatan dikemas dengan tantangan memecahkan studi kasus secara berkelompok dan sesi demo karya yang apresiatif tanpa tekanan atas kesalahan. |
+
+6. Kerangka Pembelajaran
+| Komponen | Penerapan |
+| --- | --- |
+| Praktik Pedagogis | Discovery learning dipadukan praktik langsung; peserta didik membangun sendiri pemahaman konsep dari eksplorasi kasus, bukan menerima definisi jadi dari guru. |
+| Kemitraan Pembelajaran | Guru berperan sebagai fasilitator yang memandu dengan pertanyaan pemantik; peserta didik bekerja sama dalam kelompok dan terlibat menentukan cara menguji kinerjanya. |
+| Lingkungan Pembelajaran | Kelas dikondisikan aman secara psikologis: kesalahan dalam eksplorasi dipandang sebagai bagian dari proses belajar, bukan untuk dinilai negatif. |
+| Pemanfaatan Digital | Praktik menggunakan perangkat komputer/IDE dan platform LMS terintegrasi untuk memperkuat pemahaman bermakna. |
+
+7. Sarana dan Prasarana
+a. Papan tulis, spidol, LCD proyektor/gawai untuk menampilkan modul & ilustrasi.
+b. Lembar Kerja Peserta Didik (LKPD) dan lembar jurnal refleksi.
+c. Perangkat komputer/laptop dengan IDE dan gawai siswa.
+
+8. Target Peserta Didik
+Peserta didik reguler kelas ${kelas} ${fase}, tanpa kesulitan belajar khusus.
+
+B. Komponen Inti
+1. Pemahaman Bermakna
+Pemahaman terhadap konsep ${userPrompt || "materi"} membantu peserta didik berpikir secara terstruktur, sistematis, dan efisien dalam memecahkan berbagai persoalan di kehidupan nyata maupun dunia industri digital.
+
+2. Pertanyaan Pemantik
+a. Bagaimana teknologi modern mengorganisasi data dan logika dalam skala besar secara cepat dan akurat?
+b. Menurutmu, apa yang terjadi jika sebuah program atau sistem dibangun tanpa perencanaan struktur yang rapi?
+c. Langkah apa yang paling efektif untuk menemukan letak kesalahan ketika solusi yang kamu rancang belum berjalan sesuai harapan?
+
+3. Pengalaman Belajar
+| Tahap | Aktivitas Pembelajaran | Waktu |
+| --- | --- | --- |
+| Pendahuluan | 1. Guru membuka pembelajaran dengan salam, doa, dan memeriksa kehadiran peserta didik. [Menggembirakan]<br>2. Guru mengajak peserta didik menyadari tujuan belajar hari ini dan mengapa topik ini penting. [Berkesadaran]<br>3. Guru mengajukan pertanyaan pemantik. [Bermakna]<br>4. Guru melakukan asesmen awal (assessment as learning) secara lisan. | 15 menit |
+| Memahami | 1. Peserta didik mengamati contoh kasus / program sederhana dan diminta mendiskusikan tantangan yang ditemukan. [Berkesadaran, Bermakna]<br>2. Peserta didik dibagi dalam kelompok kecil (4-5 orang) dan menerima LKPD.<br>3. Melalui pertanyaan pemandu guru, peserta didik membangun sendiri pemahaman tentang konsep utama. [Berkesadaran]<br>4. Peserta didik mendiskusikan perbedaan skema dan alur kerja konsep. [Bermakna] | 35 menit |
+| Mengaplikasi | 1. Setiap kelompok menerapkan pemahaman untuk menyelesaikan studi kasus pada LKPD. [Bermakna]<br>2. Kelompok menguji hasil kerjanya, mendemonstrasikan hasil, dan menerima masukan positif. [Menggembirakan]<br>3. Dilakukan tantangan mini-quiz / bug hunt sebagai penguatan yang menyenangkan. [Menggembirakan]<br>4. Guru memberikan penguatan konsep dan meluruskan miskonsepsi. | 50 menit |
+| Merefleksi | 1. Peserta didik menuliskan jurnal refleksi metakognitif singkat: apa yang dipahami, proses berpikir, dan bagian yang masih sulit. [Berkesadaran]<br>2. Peserta didik menilai diri sendiri menggunakan daftar periksa (self-assessment).<br>3. Guru memberikan umpan balik konstruktif secara langsung. | 20 menit |
+| Penutup | 1. Peserta didik bersama guru menyimpulkan poin penting pembelajaran.<br>2. Guru memberikan apresiasi atas partisipasi peserta didik. [Menggembirakan]<br>3. Peserta didik dilibatkan menentukan agenda pertemuan berikutnya. [Berkesadaran]<br>4. Guru menutup pembelajaran dengan doa dan salam. | 15 menit |
+
+4. Asesmen
+| Jenis | Bentuk dan Waktu Pelaksanaan |
+| --- | --- |
+| Assessment as Learning (Awal & sepanjang proses) | Refleksi metakognitif peserta didik (jurnal singkat) dan daftar periksa penilaian diri pada tahap Merefleksi; peserta didik menilai dan menyadari sendiri proses belajarnya. |
+| Assessment for Learning (Selama proses) | Observasi guru terhadap diskusi dan praktik kelompok pada tahap Memahami dan Mengaplikasi menggunakan rubrik penilaian. |
+| Assessment of Learning (Akhir pertemuan) | Soal evaluasi individu (5 soal) yang dikerjakan pada tahap akhir untuk mengukur ketercapaian tujuan pembelajaran. |
+
+Rubrik Penilaian Proses (Assessment for Learning)
+| Aspek yang Dinilai | Baik Sekali (86-100) | Baik (71-85) | Perlu Bimbingan (<71) |
+| --- | --- | --- | --- |
+| Pemahaman Konsep | Menganalisis dan merancang fungsi/solusi yang tepat, terstruktur, dan menjelaskan alasannya secara logis. | Merancang fungsi/solusi dengan cukup tepat, penjelasan cukup logis. | Belum tepat dalam merancang fungsi/solusi. |
+| Penerapan & Praktik | Mengimplementasikan konsep dengan tepat dan menjelaskan cara kerjanya secara mendalam. | Mengimplementasikan konsep dengan tepat namun penjelasan kurang mendalam. | Belum tepat dalam mengimplementasikan konsep. |
+| Pengujian & Debugging | Menguji hasil secara sistematis, menemukan dan memperbaiki kesalahan dengan tepat. | Menguji hasil dengan cukup baik namun ada kesalahan yang belum diperbaiki. | Belum mampu menguji atau memperbaiki kesalahan. |
+| Kesadaran Metakognitif | Mampu menjelaskan proses berpikirnya secara jujur, rinci, dan menyadari kekuatan/kelemahannya. | Mampu menuliskan refleksi dengan cukup jelas. | Refleksi belum menggambarkan proses berpikir secara jelas. |
+| Kerja Sama & Partisipasi | Aktif berkontribusi, menghargai pendapat teman, dan turut menjaga suasana belajar yang positif. | Berkontribusi cukup aktif dalam kelompok. | Kurang aktif berkontribusi dalam kelompok. |
+
+Soal Evaluasi Individu (Assessment of Learning)
+| No | Soal |
+| --- | --- |
+| 1 | Jelaskan apa yang dimaksud dengan ${userPrompt || "topik materi"} dan sebutkan minimal dua keuntungannya! |
+| 2 | Jelaskan perbedaan cara kerja komponen/metode utama beserta contoh penerapannya dalam kehidupan sehari-hari! |
+| 3 | Berikan analisis keputusan struktur atau langkah terbaik untuk menangani studi kasus nyata pada LKPD! |
+| 4 | Amatilah potongan instruksi/program berikut, telusuri alurnya dan tentukan hasil keluarannya! |
+| 5 | Jelaskan dengan bahasamu sendiri bagaimana proses berpikirmu saat menemukan dan memecahkan kendala pada tugas kelompokmu! |
+
+Pedoman Penskoran: nomor 1-4 bernilai 20 poin, nomor 5 dinilai berdasarkan kedalaman refleksi berpikir (skor maksimal 100).
+
+5. Pengayaan dan Remedial
+Pengayaan: Peserta didik yang telah mencapai KKTP diberikan soal HOTS dan studi kasus tingkat lanjut.
+Remedial: Peserta didik yang belum mencapai KKTP diberikan bimbingan ulang dengan pendekatan konkret dan pendampingan suportif.
+
+6. Refleksi Peserta Didik dan Guru
+Refleksi Peserta Didik (Assessment as Learning)
+a. Apa yang telah aku pahami tentang materi hari ini?
+b. Bagaimana proses berpikirku saat menyelesaikan tantangan yang diberikan?
+c. Bagian mana yang masih membingungkan dan perlu kupelajari kembali?
+
+Refleksi Guru
+a. Apakah ketiga prinsip (berkesadaran, bermakna, menggembirakan) sudah terasa dalam pembelajaran hari ini?
+b. Apakah tujuan pembelajaran telah tercapai? Kendala apa yang ditemui dan bagaimana solusinya?
 
 ---
 
-## 2. TUJUAN PEMBELAJARAN (TP) HOLISTIK
-Melalui pendekatan Pembelajaran Mendalam and model pembelajaran aktif, peserta didik diharapkan mampu:
-1. **[Pemahaman]** Mengonstruksi pemahaman konsep dasar mengenai ${userPrompt} pada elemen ${elemen} secara mendalam dan terstruktur.
-2. **[Penerapan]** Merancang, menerapkan, and menguji skema algoritma atau solusi teknis pemecahan masalah terkait ${userPrompt} dengan memanfaatkan teknologi digital secara adaptif.
-3. **[Refleksi]** Mengevaluasi alur logika berpikir mandiri and menginternalisasi nilai-nilai kolaborasi, penalaran kritis, dan ketangguhan mental dalam memecahkan masalah.
-
----
-
-## 3. LANGKAH-LANGKAH KEGIATAN PEMBELAJARAN
-### A. Sesi Pendahuluan (15 Menit) — Fase Pemahaman (Memahami)
-1. **Orientasi Berkesadaran (Mindful)**: Guru membuka kelas dengan salam hangat, berdoa bersama, and mengajak siswa melakukan latihan pernapasan sejenak (mindfulness).
-2. **Apersepsi Bermakna (Meaningful)**: Guru mengajukan pertanyaan pemantik kontekstual mengenai penerapan materi ${userPrompt} di dunia nyata.
-
-### B. Sesi Inti (60 Menit) — Fase Penerapan (Menerapkan)
-*Menggunakan model Problem-Based Learning (PBL) berbasis Praktik Pedagogis Interaktif:*
-1. **Fase 1**: Siswa mengamati sebuah studi kasus riil yang salah/rusak di portal belajar digital.
-2. **Fase 2**: Siswa berkelompok secara heterogen (3-4 anggota) untuk mendiskusikan rancangan solusi.
-3. **Fase 3**: Kelompok melakukan investigasi terbimbing dibantu gawai masing-masing untuk mengeksplorasi modul LMTMS tepercaya.
-4. **Fase 4**: Perwakilan kelompok mempresentasikan hasil karyanya secara interaktif menggunakan papan tulis digital.
-
-### C. Sesi Penutup (15 Menit) — Fase Refleksi (Mengevaluasi)
-1. **Refleksi Berkesadaran**: Siswa mengisi jurnal refleksi diri singkat mengenai apa yang telah dipelajari.
-2. **Asesmen Formatif**: Guru memberikan kuis instan formatif interaktif (2-3 soal penalaran konseptual).
-
----
-
-## 4. INTEGRASI KERANGKA PEMBELAJARAN MENDALAM (DEEP LEARNING)
-1. **Praktik Pedagogis**: Penerapan PBL mendorong eksplorasi aktif dan tanya jawab kritis.
-2. **Kemitraan Belajar**: Hubungan belajar harmonis antar guru (sebagai fasilitator) dan sesama rekan siswa (kolaborasi).
-3. **Lingkungan Belajar**: Pengaturan ruang diskusi kelas fleksibel dipadukan dengan LMS virtual aman.
-4. **Pemanfaatan Teknologi**: Penggunaan Chromebook/gawai untuk eksplorasi, visualisasi, dan asesmen reflektif langsung.`;
+Lampiran 1: Lembar Kerja Peserta Didik (LKPD)
+Lampiran 2: Glosarium
+Lampiran 3: Daftar Pustaka
+Lampiran 4: DAFTAR PERIKSA (SELF-ASSESSMENT) CAPAIAN BELAJAR PESERTA DIDIK`;
   }
 
   if (jenis === "ATP") {

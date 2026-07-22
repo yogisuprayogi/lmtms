@@ -6,6 +6,7 @@ import {
   Users,
   Calendar,
   Sparkles,
+  FileSpreadsheet,
   Printer,
   Download,
   Plus,
@@ -52,6 +53,7 @@ import {
   Radar
 } from "recharts";
 import { exportDocumentToPdf } from "./lib/pdfExporter";
+import * as XLSX from "xlsx";
 import { ELEMEN_INFORMATIKA, User, TahunPelajaran } from "./types";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
@@ -149,6 +151,7 @@ export default function App() {
     return new Date().toISOString().split("T")[0];
   });
   const [attendanceClass, setAttendanceClass] = useState("X-1");
+  const [exportMonth, setExportMonth] = useState<string>(() => new Date().toISOString().split("T")[0].substring(0, 7));
   const [studentList, setStudentList] = useState<any[]>([]);
   const [attendanceGrid, setAttendanceGrid] = useState<Record<string, { status: string; catatan: string }>>({});
   const [absensiNotification, setAbsensiNotification] = useState("");
@@ -970,6 +973,151 @@ export default function App() {
     }
   };
 
+  // Ekspor Rekapitulasi Presensi Kehadiran Siswa per Bulan ke Excel
+  const handleExportExcelAbsensi = async () => {
+    try {
+      const [yearStr, monthStr] = (exportMonth || "2026-07").split("-");
+      const year = parseInt(yearStr, 10) || 2026;
+      const month = parseInt(monthStr, 10) || 7;
+
+      const monthNames = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      ];
+      const monthName = monthNames[month - 1] || "Juli";
+
+      // Hitung jumlah hari pada bulan tersebut
+      const daysInMonth = new Date(year, month, 0).getDate();
+
+      // Ambil seluruh data absensi dari server untuk kelas terkait
+      const resAbs = await fetch(`/api/absensi?kelas=${attendanceClass}`);
+      const absensiData = await resAbs.json();
+
+      // Filter absensi untuk bulan yang dipilih
+      const targetMonthPrefix = `${yearStr}-${monthStr.padStart(2, "0")}`;
+      const filteredAbsensi = Array.isArray(absensiData)
+        ? absensiData.filter((a: any) => a.tanggal && a.tanggal.startsWith(targetMonthPrefix))
+        : [];
+
+      // Pastikan data daftar siswa tersedia
+      let listSiswa = studentList;
+      if (!listSiswa || listSiswa.length === 0) {
+        const resSiswa = await fetch(`/api/users?role=SISWA&kelas=${attendanceClass}`);
+        listSiswa = await resSiswa.json();
+      }
+
+      // Susun baris header dan judul
+      const rows: any[][] = [];
+      rows.push(["REKAPITULASI PRESENSI KEHADIRAN SISWA BULANAN"]);
+      rows.push([`Rombel / Kelas: ${attendanceClass}`, `Bulan: ${monthName} ${year}`, `Total Siswa: ${listSiswa.length}`]);
+      rows.push([`Tahun Pelajaran: ${activeYear?.tahun || "2025/2026"}`, `Mata Pelajaran: Informatika`, `Tanggal Unduh: ${new Date().toLocaleDateString("id-ID")}`]);
+      rows.push([]); // Baris kosong pemisah
+
+      // Header Kolom Tabel Spreadsheet
+      const headerRow: any[] = ["No", "NISN", "Nama Siswa", "Kelas"];
+      for (let d = 1; d <= daysInMonth; d++) {
+        headerRow.push(d.toString().padStart(2, "0"));
+      }
+      headerRow.push("Hadir (H)", "Izin (I)", "Sakit (S)", "Alpa (A)", "Persentase Kehadiran (%)");
+      rows.push(headerRow);
+
+      // Inisialisasi hitungan per tanggal untuk ringkasan bawah
+      const dayTotals: Record<number, { H: number; I: number; S: number; A: number }> = {};
+      for (let d = 1; d <= daysInMonth; d++) {
+        dayTotals[d] = { H: 0, I: 0, S: 0, A: 0 };
+      }
+
+      let grandH = 0, grandI = 0, grandS = 0, grandA = 0;
+
+      listSiswa.forEach((st: any, idx: number) => {
+        let hCount = 0;
+        let iCount = 0;
+        let sCount = 0;
+        let aCount = 0;
+
+        const row: any[] = [idx + 1, st.nisn || "-", st.nama, st.kelas || attendanceClass];
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateFormatted = `${yearStr}-${monthStr.padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          const rec = filteredAbsensi.find((a: any) => a.siswaId === st.id && a.tanggal === dateFormatted);
+
+          if (rec) {
+            const stUpper = (rec.status || "").toUpperCase();
+            if (stUpper === "HADIR") {
+              row.push("H");
+              hCount++;
+              dayTotals[d].H++;
+            } else if (stUpper === "IZIN") {
+              row.push("I");
+              iCount++;
+              dayTotals[d].I++;
+            } else if (stUpper === "SAKIT") {
+              row.push("S");
+              sCount++;
+              dayTotals[d].S++;
+            } else if (stUpper === "ALPA") {
+              row.push("A");
+              aCount++;
+              dayTotals[d].A++;
+            } else {
+              row.push("-");
+            }
+          } else {
+            row.push("-");
+          }
+        }
+
+        const totalRecorded = hCount + iCount + sCount + aCount;
+        const pct = totalRecorded > 0 ? `${Math.round((hCount / totalRecorded) * 100)}%` : "100%";
+
+        grandH += hCount;
+        grandI += iCount;
+        grandS += sCount;
+        grandA += aCount;
+
+        row.push(hCount, iCount, sCount, aCount, pct);
+        rows.push(row);
+      });
+
+      // Baris Total / Ringkasan Bawah
+      const totalRow: any[] = ["TOTAL HADIR KELAS", "", "", ""];
+      for (let d = 1; d <= daysInMonth; d++) {
+        totalRow.push(dayTotals[d].H > 0 ? dayTotals[d].H : "-");
+      }
+      const grandTotalSessions = grandH + grandI + grandS + grandA;
+      const grandPct = grandTotalSessions > 0 ? `${Math.round((grandH / grandTotalSessions) * 100)}%` : "100%";
+      totalRow.push(grandH, grandI, grandS, grandA, grandPct);
+      rows.push(totalRow);
+
+      // Buat lembar kerja Spreadsheet (Worksheet & Workbook)
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+
+      // Konfigurasi Lebar Kolom
+      const cols = [
+        { wch: 5 },  // No
+        { wch: 16 }, // NISN
+        { wch: 28 }, // Nama Siswa
+        { wch: 10 }, // Kelas
+      ];
+      for (let d = 1; d <= daysInMonth; d++) {
+        cols.push({ wch: 4 });
+      }
+      cols.push({ wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 24 });
+      ws["!cols"] = cols;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, `Absensi_${attendanceClass}`);
+
+      const fileName = `Rekap_Absensi_Kelas_${attendanceClass}_${monthName}_${year}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      showToast(`Rekapitulasi presensi kelas ${attendanceClass} bulan ${monthName} ${year} berhasil diekspor ke Excel!`, "success");
+    } catch (err) {
+      console.error("Gagal mengekspor data absensi ke Excel:", err);
+      showToast("Gagal merangkum data absensi. Silakan coba lagi.", "error");
+    }
+  };
+
   // Admin: Tahun Pelajaran Baru
   const handleCreateTp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1684,9 +1832,9 @@ export default function App() {
                   <p className="text-slate-500 text-xs mt-1">Kelola pencatatan kehadiran harian siswa secara real-time.</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-end gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tanggal</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tanggal Input</label>
                     <input
                       type="date"
                       value={attendanceDate}
@@ -1706,6 +1854,24 @@ export default function App() {
                       <option value="XII-1">XII-1 (Fase F)</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bulan Rekap</label>
+                    <input
+                      type="month"
+                      value={exportMonth}
+                      onChange={(e) => setExportMonth(e.target.value)}
+                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-blue-500 font-mono font-bold"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleExportExcelAbsensi}
+                    className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs transition shadow-xs cursor-pointer active:scale-95"
+                    title="Unduh Rekapitulasi Presensi Siswa Bulanan dalam Format Spreadsheet (.xlsx)"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <span>Ekspor ke Excel</span>
+                  </button>
                 </div>
               </div>
 
