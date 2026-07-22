@@ -53,6 +53,7 @@ import {
   Radar
 } from "recharts";
 import { exportDocumentToPdf } from "./lib/pdfExporter";
+import { downloadSelectedDocumentsZip } from "./lib/zipExporter";
 import * as XLSX from "xlsx";
 import { ELEMEN_INFORMATIKA, User, TahunPelajaran } from "./types";
 import { Header } from "./components/Header";
@@ -105,6 +106,21 @@ export default function App() {
   const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
   const [isCreatingDoc, setIsCreatingDoc] = useState(false);
   const [expandedDocId, setExpandedDocId] = useState<string | null>(null);
+  const [selectedPerangkatIds, setSelectedPerangkatIds] = useState<string[]>([]);
+  const [isZippingPerangkat, setIsZippingPerangkat] = useState(false);
+  const [filterJenis, setFilterJenis] = useState<string>("ALL");
+  const [filterKelas, setFilterKelas] = useState<string>("ALL");
+  const [searchPerangkat, setSearchPerangkat] = useState<string>("");
+
+  const filteredPerangkatDocs = perangkatDocs.filter((doc) => {
+    const matchJenis = filterJenis === "ALL" || doc.jenis === filterJenis;
+    const matchKelas = filterKelas === "ALL" || doc.kelas === filterKelas;
+    const matchSearch =
+      !searchPerangkat ||
+      doc.judul?.toLowerCase().includes(searchPerangkat.toLowerCase()) ||
+      doc.konten?.toLowerCase().includes(searchPerangkat.toLowerCase());
+    return matchJenis && matchKelas && matchSearch;
+  });
   const [docForm, setDocForm] = useState({
     judul: "",
     jenis: "MODUL_AJAR",
@@ -116,6 +132,36 @@ export default function App() {
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiDocType, setAiDocType] = useState("Modul Ajar / RPP");
   const [aiNotification, setAiNotification] = useState("");
+
+  const handleDownloadSelectedZip = async () => {
+    if (selectedPerangkatIds.length === 0) return;
+    setIsZippingPerangkat(true);
+    showToast(`Membundel ${selectedPerangkatIds.length} dokumen ke dalam arsip ZIP...`, "info");
+
+    try {
+      const selectedDocsData = perangkatDocs
+        .filter((doc) => selectedPerangkatIds.includes(doc.id))
+        .map((doc) => ({
+          judul: doc.judul,
+          konten: doc.konten,
+          jenis: doc.jenis,
+          kelas: doc.kelas,
+          elemen: doc.elemen,
+          userEmail: user?.email || "yogisuprayogi02@guru.smk.belajar.id"
+        }));
+
+      await downloadSelectedDocumentsZip(
+        selectedDocsData,
+        `Perangkat_Pembelajaran_Terpilih_${new Date().toISOString().slice(0, 10)}.zip`
+      );
+      showToast(`Berhasil mengunduh ${selectedPerangkatIds.length} dokumen dalam format ZIP!`, "success");
+    } catch (err) {
+      console.error("Gagal mengunduh ZIP:", err);
+      showToast("Gagal mengunduh arsip ZIP. Silakan coba lagi.", "error");
+    } finally {
+      setIsZippingPerangkat(false);
+    }
+  };
 
   // Materi states
   const [materiList, setMateriList] = useState<any[]>([]);
@@ -1372,7 +1418,7 @@ export default function App() {
               <div className={`lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col h-[650px] no-print ${
                 selectedDoc || isCreatingDoc ? "hidden lg:flex" : "flex"
               }`}>
-                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
                   <div className="space-y-0.5">
                     <h3 className="font-display font-bold text-slate-800 text-sm sm:text-base">Administrasi Guru</h3>
                     <p className="text-[10px] text-slate-400 font-medium">Ketuk kartu untuk detail singkat</p>
@@ -1386,25 +1432,183 @@ export default function App() {
                   </button>
                 </div>
 
+                {/* Search & Filter Controls */}
+                <div className="space-y-2 mb-3 bg-slate-50/70 border border-slate-200 rounded-xl p-2.5">
+                  {/* Search Input */}
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Cari judul / kata kunci..."
+                      value={searchPerangkat}
+                      onChange={(e) => setSearchPerangkat(e.target.value)}
+                      className="w-full pl-8 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+                    />
+                    {searchPerangkat && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchPerangkat("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold hover:bg-slate-300"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown Filters */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <select
+                        value={filterJenis}
+                        onChange={(e) => setFilterJenis(e.target.value)}
+                        className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                      >
+                        <option value="ALL">Semua Jenis</option>
+                        <option value="MODUL_AJAR">Modul Ajar</option>
+                        <option value="ATP">ATP</option>
+                        <option value="PROTA">PROTA</option>
+                        <option value="PROSEM">PROSEM</option>
+                        <option value="RUBRIK_ASESMEN">Rubrik Asesmen</option>
+                        <option value="LKPD">LKPD</option>
+                        <option value="MODUL_PROJEK">Modul Projek</option>
+                      </select>
+                    </div>
+                    <div>
+                      <select
+                        value={filterKelas}
+                        onChange={(e) => setFilterKelas(e.target.value)}
+                        className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                      >
+                        <option value="ALL">Semua Kelas</option>
+                        <option value="X">Kelas X</option>
+                        <option value="XI">Kelas XI</option>
+                        <option value="XII">Kelas XII</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Active Filters Summary & Reset */}
+                  {(filterJenis !== "ALL" || filterKelas !== "ALL" || searchPerangkat) && (
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[10px]">
+                      <span className="text-slate-500 font-medium">
+                        Hasil: <strong className="text-blue-600">{filteredPerangkatDocs.length}</strong> dari {perangkatDocs.length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFilterJenis("ALL");
+                          setFilterKelas("ALL");
+                          setSearchPerangkat("");
+                        }}
+                        className="font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                      >
+                        Reset Filter
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Multi-Select & ZIP Download Action Bar */}
+                {filteredPerangkatDocs.length > 0 && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 mb-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={
+                            filteredPerangkatDocs.length > 0 &&
+                            filteredPerangkatDocs.every((d) => selectedPerangkatIds.includes(d.id))
+                          }
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              const filteredIds = filteredPerangkatDocs.map((d) => d.id);
+                              const newSelected = Array.from(new Set([...selectedPerangkatIds, ...filteredIds]));
+                              setSelectedPerangkatIds(newSelected);
+                            } else {
+                              const filteredIds = filteredPerangkatDocs.map((d) => d.id);
+                              setSelectedPerangkatIds(selectedPerangkatIds.filter((id) => !filteredIds.includes(id)));
+                            }
+                          }}
+                          className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span>Pilih Hasil Ini ({filteredPerangkatDocs.length})</span>
+                      </label>
+                      {selectedPerangkatIds.length > 0 && (
+                        <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full font-mono">
+                          {selectedPerangkatIds.length} Terpilih
+                        </span>
+                      )}
+                    </div>
+
+                    {selectedPerangkatIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleDownloadSelectedZip}
+                        disabled={isZippingPerangkat}
+                        className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>{isZippingPerangkat ? "Mengepak Arsip ZIP..." : `Unduh ${selectedPerangkatIds.length} Dokumen Terpilih (.ZIP)`}</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {/* List Perangkat dengan Expandable Cards */}
                 <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin">
-                  {perangkatDocs.length === 0 ? (
-                    <p className="text-xs text-slate-400 text-center py-8">Belum ada dokumen perangkat pembelajaran.</p>
+                  {filteredPerangkatDocs.length === 0 ? (
+                    <div className="text-center py-8 px-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                      <p className="text-xs text-slate-500 font-medium">
+                        {perangkatDocs.length === 0
+                          ? "Belum ada dokumen perangkat pembelajaran."
+                          : "Tidak ada dokumen yang sesuai dengan filter pencarian."}
+                      </p>
+                      {(filterJenis !== "ALL" || filterKelas !== "ALL" || searchPerangkat) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilterJenis("ALL");
+                            setFilterKelas("ALL");
+                            setSearchPerangkat("");
+                          }}
+                          className="mt-2 text-xs text-blue-600 font-bold hover:underline"
+                        >
+                          Reset semua filter
+                        </button>
+                      )}
+                    </div>
                   ) : (
-                    perangkatDocs.map((doc) => {
+                    filteredPerangkatDocs.map((doc) => {
                       const isExpanded = expandedDocId === doc.id;
+                      const isChecked = selectedPerangkatIds.includes(doc.id);
                       return (
                         <div
                           key={doc.id}
                           className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 ${
                             selectedDoc?.id === doc.id
                               ? "bg-blue-50/80 border-blue-300 shadow-sm"
+                              : isChecked
+                              ? "bg-indigo-50/40 border-indigo-200"
                               : "bg-white border-slate-150 hover:bg-slate-50/70"
                           }`}
                         >
-                          {/* Upper row: Badges and Expand toggle */}
+                          {/* Upper row: Badges, Checkbox, and Expand toggle */}
                           <div className="flex justify-between items-center gap-2">
-                            <div className="flex items-center gap-1.5 flex-wrap">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  if (isChecked) {
+                                    setSelectedPerangkatIds(selectedPerangkatIds.filter((id) => id !== doc.id));
+                                  } else {
+                                    setSelectedPerangkatIds([...selectedPerangkatIds, doc.id]);
+                                  }
+                                }}
+                                className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                                aria-label={`Pilih ${doc.judul}`}
+                              />
                               <span className="text-[9px] font-mono bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg uppercase font-bold tracking-wider">
                                 {doc.jenis.replace("_", " ")}
                               </span>

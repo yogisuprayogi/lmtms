@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import { ELEMEN_INFORMATIKA } from "../types";
 
-interface DocumentData {
+export interface DocumentData {
   judul: string;
   konten: string;
   jenis: string;
@@ -10,7 +10,7 @@ interface DocumentData {
   userEmail: string;
 }
 
-export function exportDocumentToPdf(docData: DocumentData) {
+export function buildDocumentPdf(docData: DocumentData): jsPDF {
   const { judul, konten, jenis, kelas, elemen, userEmail } = docData;
 
   // Inisialisasi dokumen A4 (210mm x 297mm)
@@ -160,7 +160,6 @@ export function exportDocumentToPdf(docData: DocumentData) {
 
   // 3. PARSING & RENDERING MARKDOWN CONTENT
   const lines = konten.split("\n");
-  let inList = false;
 
   doc.setFont("Helvetica", "normal");
   doc.setFontSize(10);
@@ -185,7 +184,6 @@ export function exportDocumentToPdf(docData: DocumentData) {
       const splitText = doc.splitTextToSize(text, contentWidth);
       doc.text(splitText, marginX, currentY);
       currentY += splitText.length * 6 + 3;
-      inList = false;
     } 
     else if (trimmedLine.startsWith("## ")) {
       checkPageOverflow(10);
@@ -196,7 +194,6 @@ export function exportDocumentToPdf(docData: DocumentData) {
       const splitText = doc.splitTextToSize(text, contentWidth);
       doc.text(splitText, marginX, currentY);
       currentY += splitText.length * 5.5 + 2.5;
-      inList = false;
     } 
     else if (trimmedLine.startsWith("### ")) {
       checkPageOverflow(8);
@@ -207,7 +204,6 @@ export function exportDocumentToPdf(docData: DocumentData) {
       const splitText = doc.splitTextToSize(text, contentWidth);
       doc.text(splitText, marginX, currentY);
       currentY += splitText.length * 5 + 2;
-      inList = false;
     } 
     // Bullet Points
     else if (trimmedLine.startsWith("- ") || trimmedLine.startsWith("* ")) {
@@ -218,13 +214,11 @@ export function exportDocumentToPdf(docData: DocumentData) {
       const text = trimmedLine.substring(2);
       const splitText = doc.splitTextToSize(text, contentWidth - 6);
 
-      // Draw custom beautiful bullet symbol (small square or dot)
       doc.setFillColor(71, 85, 105);
       doc.circle(marginX + 2, currentY - 1, 0.8, "F");
 
       doc.text(splitText, marginX + 6, currentY);
       currentY += splitText.length * 4.5 + 1.5;
-      inList = true;
     } 
     // Numbered lists
     else if (/^\d+\.\s/.test(trimmedLine)) {
@@ -239,11 +233,9 @@ export function exportDocumentToPdf(docData: DocumentData) {
       doc.text(numPrefix, marginX, currentY);
       doc.text(splitText, marginX + 7, currentY);
       currentY += splitText.length * 4.5 + 1.5;
-      inList = true;
     } 
-    // Tables (e.g. | Column 1 | Column 2 |)
+    // Tables
     else if (trimmedLine.startsWith("|")) {
-      // Clean table divider lines
       if (trimmedLine.includes("---") || trimmedLine.includes("-|-")) {
         continue;
       }
@@ -256,8 +248,6 @@ export function exportDocumentToPdf(docData: DocumentData) {
       const cellCount = cells.length;
       if (cellCount > 0) {
         const colWidth = contentWidth / cellCount;
-        
-        // Draw small grid background for headers
         const isHeader = i === 0 || (lines[i-1] && lines[i-1].trim() === "") || !lines[i-1].trim().startsWith("|");
         if (isHeader) {
           doc.setFillColor(241, 245, 249);
@@ -267,19 +257,16 @@ export function exportDocumentToPdf(docData: DocumentData) {
           doc.setFont("Helvetica", "normal");
         }
 
-        // Render cells
         for (let cIdx = 0; cIdx < cellCount; cIdx++) {
           const cellX = marginX + (cIdx * colWidth) + 2;
           const splitCell = doc.splitTextToSize(cells[cIdx], colWidth - 4);
           doc.text(splitCell, cellX, currentY);
         }
         
-        // Draw underline
         doc.setDrawColor(226, 232, 240);
         doc.line(marginX, currentY + 2, pageWidth - marginX, currentY + 2);
         currentY += 6.5;
       }
-      inList = false;
     } 
     // Normal paragraphs
     else {
@@ -290,18 +277,16 @@ export function exportDocumentToPdf(docData: DocumentData) {
       const splitText = doc.splitTextToSize(trimmedLine, contentWidth);
       doc.text(splitText, marginX, currentY);
       currentY += splitText.length * 4.5 + 2.5;
-      inList = false;
     }
   }
 
-  // 4. LEMBAR PENGESAHAN / SIGNATURE BLOCK (At the very end of document)
+  // 4. LEMBAR PENGESAHAN / SIGNATURE BLOCK
   checkPageOverflow(42);
   currentY += 8;
   doc.setFont("Helvetica", "normal");
   doc.setFontSize(9.5);
   doc.setTextColor(30, 41, 59);
   
-  // Date and place
   const todayFormatted = new Date().toLocaleDateString("id-ID", { dateStyle: "long" });
   doc.text(`Jakarta, ${todayFormatted}`, pageWidth - marginX - 60, currentY);
   currentY += 5;
@@ -317,7 +302,6 @@ export function exportDocumentToPdf(docData: DocumentData) {
   doc.text("Kepala SMK Negeri Guru Belajar,", leftSignX, currentY);
   doc.text("Informatika,", rightSignX, currentY);
   
-  // Space for signatures
   currentY += 18;
   
   doc.setFont("Helvetica", "bold");
@@ -331,25 +315,32 @@ export function exportDocumentToPdf(docData: DocumentData) {
   doc.text("NIP. 19780512 200501 1 002", leftSignX, currentY);
   doc.text(`NUPTK. ${userEmail.substring(0, 8).toUpperCase()}`, rightSignX, currentY);
 
-  // 5. FOOTER & PAGINATION GENERATOR (Multi-page tracking)
+  // 5. FOOTER & PAGINATION
   const totalPages = doc.internal.pages.length - 1;
   for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
     doc.setPage(pageNum);
     
-    // Draw running footer on all pages
     doc.setFont("Helvetica", "normal");
     doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184); // Slate-400
+    doc.setTextColor(148, 163, 184);
     doc.text(`SMK Negeri Guru Belajar - Perangkat Administrasi Kurikulum Merdeka`, marginX, pageHeight - 10);
     doc.text(`Halaman ${pageNum} dari ${totalPages}`, pageWidth - marginX, pageHeight - 10, { align: "right" });
     
-    // Draw thin line separator above footer
     doc.setDrawColor(241, 245, 249);
     doc.setLineWidth(0.25);
     doc.line(marginX, pageHeight - 13, pageWidth - marginX, pageHeight - 13);
   }
 
-  // Trigger Save/Download Dialog
-  const fileNameClean = judul.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  return doc;
+}
+
+export function exportDocumentToPdf(docData: DocumentData) {
+  const doc = buildDocumentPdf(docData);
+  const fileNameClean = docData.judul.toLowerCase().replace(/[^a-z0-9]+/g, "_");
   doc.save(`Perangkat_Ajar_${fileNameClean}.pdf`);
+}
+
+export function generateDocumentPdfArrayBuffer(docData: DocumentData): ArrayBuffer {
+  const doc = buildDocumentPdf(docData);
+  return doc.output("arraybuffer");
 }
