@@ -20,6 +20,7 @@ import {
   Settings
 } from "lucide-react";
 import { User, TahunPelajaran } from "../types";
+import { InteractiveCalendar } from "./InteractiveCalendar";
 
 interface Rombel {
   id: string;
@@ -681,104 +682,25 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
 
       {/* 2. KALENDER AKADEMIK */}
       {activeSubTab === "kalender" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="subtab-calendar">
-          {/* Calendar Creator Form */}
-          {user.role === "ADMIN" ? (
-            <div className="lg:col-span-1 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4 h-fit">
-              <h3 className="font-display font-bold text-slate-800 text-sm flex items-center gap-1.5 border-b border-slate-100 pb-3">
-                <Plus className="h-4 w-4 text-indigo-600" />
-                <span>Tambah Agenda Sekolah</span>
-              </h3>
-              <form onSubmit={handleSaveCalendar} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Tanggal Acara</label>
-                  <input
-                    type="date"
-                    required
-                    value={calForm.tanggal}
-                    onChange={(e) => setCalForm({ ...calForm, tanggal: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white font-mono font-bold text-slate-700"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Judul / Kegiatan</label>
-                  <input
-                    type="text"
-                    required
-                    value={calForm.judul}
-                    onChange={(e) => setCalForm({ ...calForm, judul: e.target.value })}
-                    placeholder="Contoh: Pembagian Rapor Semester"
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Kategori / Jenis</label>
-                  <select
-                    value={calForm.jenis}
-                    onChange={(e) => setCalForm({ ...calForm, jenis: e.target.value as any })}
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white text-slate-700 font-bold"
-                  >
-                    <option value="AKADEMIK">AKADEMIK (Pembelajaran)</option>
-                    <option value="LIBUR">LIBUR SEKOLAH</option>
-                    <option value="UJIAN">UJIAN (PAS / PTS)</option>
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1.5"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Simpan Agenda</span>
-                </button>
-              </form>
-            </div>
-          ) : (
-            <div className="lg:col-span-1 bg-slate-50 p-5 border border-slate-200 rounded-2xl text-slate-500 text-xs h-fit leading-relaxed">
-              <p className="font-bold text-slate-800 mb-2">Akses Terbatas</p>
-              Agenda kalender akademik dapat dibaca oleh seluruh civitas sekolah (Guru & Siswa), namun hanya Admin yang berwenang memperbarui daftar agenda resmi sekolah.
-            </div>
-          )}
-
-          {/* List Events */}
-          <div className="lg:col-span-2 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4">
-            <h3 className="font-display font-bold text-slate-800 text-sm">Kalender Resmi Sekolah</h3>
-            <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto pr-1">
-              {calendarEvents.length === 0 ? (
-                <p className="p-8 text-center text-xs text-slate-400">Belum ada agenda sekolah.</p>
-              ) : (
-                calendarEvents.map((evt) => (
-                  <div key={evt.id} className="py-3 flex justify-between items-center text-xs hover:bg-slate-50/50 px-2 rounded-lg transition">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-slate-50 border border-slate-150 rounded-xl p-2 font-mono text-center shrink-0 w-16">
-                        <span className="block text-[10px] text-slate-400 font-bold">TGL</span>
-                        <span className="font-bold text-slate-700">{evt.tanggal.substring(8, 10)}</span>
-                        <span className="block text-[8px] text-slate-400">{evt.tanggal.substring(5, 7)}</span>
-                      </div>
-                      <div>
-                        <span className="font-bold text-slate-800 text-sm block">{evt.judul}</span>
-                        <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-bold mt-1 uppercase tracking-wider ${
-                          evt.jenis === "AKADEMIK" ? "bg-indigo-50 text-indigo-700 border border-indigo-100" :
-                          evt.jenis === "UJIAN" ? "bg-amber-50 text-amber-700 border border-amber-100" :
-                          "bg-rose-50 text-rose-700 border border-rose-100"
-                        }`}>
-                          {evt.jenis}
-                        </span>
-                      </div>
-                    </div>
-                    {user.role === "ADMIN" && (
-                      <button
-                        onClick={() => handleDeleteCalendar(evt.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-50 transition"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+        <InteractiveCalendar
+          user={user}
+          calendarEvents={calendarEvents}
+          onAddEvent={async (evt) => {
+            const res = await fetch("/api/academic/calendar", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-user-role": user.role },
+              body: JSON.stringify(evt)
+            });
+            if (res.ok) {
+              loadAllData();
+            } else {
+              throw new Error("Gagal menyimpan agenda kalender");
+            }
+          }}
+          onDeleteEvent={handleDeleteCalendar}
+          onReload={loadAllData}
+          triggerNotification={triggerNotification}
+        />
       )}
 
       {/* 3. DAFTAR GURU */}

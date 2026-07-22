@@ -277,6 +277,17 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
     localStorage.setItem("lms_modul_list", JSON.stringify(modulList));
   }, [modulList]);
 
+  // Sync calendar scheduled dates automatically
+  useEffect(() => {
+    const handleScheduleUpdate = (e: any) => {
+      if (e.detail) {
+        setModulList(e.detail);
+      }
+    };
+    window.addEventListener("lms_schedule_updated", handleScheduleUpdate);
+    return () => window.removeEventListener("lms_schedule_updated", handleScheduleUpdate);
+  }, []);
+
   useEffect(() => {
     localStorage.setItem("lms_kktp_list", JSON.stringify(kktpList));
   }, [kktpList]);
@@ -1055,6 +1066,19 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
                       </div>
                       <h4 className="font-display font-bold text-slate-800 text-sm leading-snug">{mod.judul}</h4>
                       <p className="text-xs text-slate-500 leading-relaxed line-clamp-4">{mod.isi}</p>
+                      
+                      {mod.tanggalPertemuan && (
+                        <div className="bg-indigo-50 border border-indigo-150 p-2 rounded-xl flex items-center justify-between text-[10px] text-indigo-900 font-bold">
+                          <span className="flex items-center gap-1">
+                            <CalendarDays className="h-3.5 w-3.5 text-indigo-600" />
+                            <span>Jadwal KBM: {mod.tanggalPertemuan}</span>
+                          </span>
+                          <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded text-[9px] font-mono">
+                            Kalender Efektif
+                          </span>
+                        </div>
+                      )}
+
                       <div className="pt-2 border-t border-slate-100 flex justify-between text-[10px] text-slate-400">
                         <span>Metode: {mod.metode}</span>
                         <span>{mod.alokasi}</span>
