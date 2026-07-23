@@ -460,9 +460,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* User Profile Summary */}
         <div className="px-6 py-4 bg-slate-950/40 border-b border-slate-800" id="user-profile-summary">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400 font-bold border border-slate-700">
-              {user.nama.charAt(0)}
-            </div>
+            {user.foto ? (
+              <img
+                src={user.foto}
+                alt={user.nama}
+                referrerPolicy="no-referrer"
+                className="h-9 w-9 rounded-full object-cover border border-slate-700 shrink-0"
+              />
+            ) : (
+              <div className="h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400 font-bold border border-slate-700 shrink-0">
+                {user.nama.charAt(0)}
+              </div>
+            )}
             <div className="overflow-hidden">
               <h4 className="text-xs font-semibold text-white truncate leading-tight">{user.nama}</h4>
               <div className="flex items-center gap-1.5 mt-1">

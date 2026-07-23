@@ -32,6 +32,7 @@ router.post("/auth/login", authController.login);
 router.get("/users", authController.getUsers);
 router.put("/users/profile", authController.updateProfile);
 router.put("/users/password", authController.updatePassword);
+router.post("/users/reset-password", enforceRole(["GURU", "ADMIN"]), authController.resetStudentPassword);
 router.put("/users/mfa", authController.toggleMfa);
 router.get("/activity-logs", authController.getActivityLogs);
 
@@ -68,9 +69,9 @@ router.get("/analitika", analitikaController.getAnalitika);
 router.post("/analitika/import", enforceRole(["GURU", "ADMIN"]), analitikaController.importData);
 
 // 8. ACADEMIC MANAGEMENT ROUTES
-router.post("/academic/users", enforceRole(["ADMIN"]), academicController.createUser);
-router.put("/academic/users/:id", enforceRole(["ADMIN"]), academicController.updateUser);
-router.delete("/academic/users/:id", enforceRole(["ADMIN"]), academicController.deleteUser);
+router.post("/academic/users", enforceRole(["ADMIN", "GURU"]), academicController.createUser);
+router.put("/academic/users/:id", enforceRole(["ADMIN", "GURU"]), academicController.updateUser);
+router.delete("/academic/users/:id", enforceRole(["ADMIN", "GURU"]), academicController.deleteUser);
 
 router.get("/academic/rombels", academicController.getRombels);
 router.post("/academic/rombels", enforceRole(["ADMIN"]), academicController.createRombel);

@@ -6,7 +6,7 @@ import { readDB, writeDB, addActivityLog } from "../db";
 // ==========================================
 
 export const createUser = (req: Request, res: Response) => {
-  const { username, nama, email, role, nip, nisn, kelas, password } = req.body;
+  const { username, nama, email, role, nip, nisn, kelas, password, foto } = req.body;
   if (!username || !nama || !email || !role || !password) {
     return res.status(400).json({ success: false, message: "Kredensial dasar wajib diisi." });
   }
@@ -26,6 +26,7 @@ export const createUser = (req: Request, res: Response) => {
     email,
     role,
     password,
+    foto: foto || "",
     mfaEnabled: false,
     mfaSecret: Math.random().toString(36).substring(2, 12).toUpperCase(),
   };
@@ -48,7 +49,7 @@ export const createUser = (req: Request, res: Response) => {
 
 export const updateUser = (req: Request, res: Response) => {
   const { id } = req.params;
-  const { nama, email, nip, nisn, kelas, password } = req.body;
+  const { nama, email, nip, nisn, kelas, password, foto } = req.body;
 
   const db = readDB();
   const index = db.users.findIndex((u: any) => u.id === id);
@@ -62,6 +63,7 @@ export const updateUser = (req: Request, res: Response) => {
     nama: nama || oldUser.nama,
     email: email || oldUser.email,
     password: password || oldUser.password,
+    foto: foto !== undefined ? foto : oldUser.foto
   };
 
   if (oldUser.role === "GURU") {
@@ -74,7 +76,7 @@ export const updateUser = (req: Request, res: Response) => {
   db.users[index] = updatedUser;
   writeDB(db);
 
-  addActivityLog("usr-admin", "Administrator LMTMS", "ADMIN", "UPDATE_USER", `Mengedit detail akun pengguna: ${nama}`, req.ip);
+  addActivityLog("usr-admin", "Administrator LMTMS", "ADMIN", "UPDATE_USER", `Mengedit detail akun pengguna: ${updatedUser.nama}`, req.ip);
 
   res.json({ success: true, user: updatedUser });
 };

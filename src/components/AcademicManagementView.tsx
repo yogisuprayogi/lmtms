@@ -17,7 +17,10 @@ import {
   Search,
   BookOpen,
   School,
-  Settings
+  Settings,
+  KeyRound,
+  Camera,
+  Upload
 } from "lucide-react";
 import { User, TahunPelajaran } from "../types";
 import { InteractiveCalendar } from "./InteractiveCalendar";
@@ -94,13 +97,19 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
     nip: "",
     nisn: "",
     kelas: "X-1",
-    password: ""
+    password: "",
+    foto: ""
   });
   const [romForm, setRomForm] = useState({ id: "", nama: "", tingkat: "X", waliKelasId: "" });
   const [jadForm, setJadForm] = useState({ id: "", hari: "Senin", jam: "", kelas: "X-1", mapel: "", guruId: "" });
   const [mapForm, setMapForm] = useState({ id: "", guruId: "", kelas: "X-1", elemen: "BK" });
 
   const [isEditing, setIsEditing] = useState(false);
+
+  // Reset Password Modal State
+  const [selectedStudentForReset, setSelectedStudentForReset] = useState<User | null>(null);
+  const [resetCustomPassword, setResetCustomPassword] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   // Load all academic data
   const loadAllData = async () => {
@@ -335,7 +344,8 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
       nip: "",
       nisn: "",
       kelas: "X-1",
-      password: ""
+      password: "",
+      foto: ""
     });
     setIsEditing(false);
   };
@@ -350,9 +360,67 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
       nip: u.nip || "",
       nisn: u.nisn || "",
       kelas: u.kelas || "X-1",
-      password: u.password || ""
+      password: u.password || "",
+      foto: u.foto || ""
     });
     setIsEditing(true);
+  };
+
+  const handleStudentPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      triggerNotification("error", "Ukuran berkas foto terlalu besar. Maksimum 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setUserForm({ ...userForm, foto: event.target.result as string });
+        triggerNotification("success", "Foto profil siswa berhasil dimuat!");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleResetStudentPassword = (student: User) => {
+    setSelectedStudentForReset(student);
+    setResetCustomPassword(`${student.username}123`);
+  };
+
+  const confirmResetPassword = async () => {
+    if (!selectedStudentForReset) return;
+    setIsResetting(true);
+    try {
+      const res = await fetch("/api/users/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": user.role
+        },
+        body: JSON.stringify({
+          studentId: selectedStudentForReset.id,
+          newPassword: resetCustomPassword || `${selectedStudentForReset.username}123`,
+          teacherId: user.id,
+          teacherName: user.nama
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        triggerNotification("success", data.message);
+        setSelectedStudentForReset(null);
+        setResetCustomPassword("");
+        loadAllData();
+      } else {
+        triggerNotification("error", data.message || "Gagal melakukan reset kata sandi.");
+      }
+    } catch (err) {
+      triggerNotification("error", "Gagal menghubungi server untuk reset kata sandi.");
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   const handleDeleteUser = async (id: string) => {
@@ -853,14 +921,54 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
       {/* 4. DAFTAR SISWA */}
       {activeSubTab === "siswa" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="subtab-siswa">
-          {/* Siswa Form Editor */}
-          {user.role === "ADMIN" ? (
+          {/* Siswa Form Editor (Admin & Guru Access) */}
+          {(user.role === "ADMIN" || user.role === "GURU") ? (
             <div className="lg:col-span-1 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4 h-fit">
-              <h3 className="font-display font-bold text-slate-800 text-sm flex items-center gap-1.5 border-b border-slate-100 pb-3">
-                {isEditing ? <Edit2 className="h-4 w-4 text-amber-500" /> : <Plus className="h-4 w-4 text-indigo-600" />}
-                <span>{isEditing ? "Ubah Akun Siswa" : "Daftarkan Siswa Baru"}</span>
+              <h3 className="font-display font-bold text-slate-800 text-sm flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-1.5">
+                  {isEditing ? <Edit2 className="h-4 w-4 text-amber-500" /> : <Plus className="h-4 w-4 text-indigo-600" />}
+                  <span>{isEditing ? "Ubah Data & Foto Siswa" : "Daftarkan Siswa Baru"}</span>
+                </div>
+                {user.role === "GURU" && (
+                  <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">Guru Mode</span>
+                )}
               </h3>
               <form onSubmit={handleSaveUser} className="space-y-4">
+                {/* Foto Profil Input & Preview */}
+                <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                  <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1">
+                    <Camera className="h-3.5 w-3.5 text-indigo-600" />
+                    <span>Foto Profil Siswa (Diunggah Guru)</span>
+                  </label>
+                  <div className="flex items-center gap-3 pt-1">
+                    {userForm.foto ? (
+                      <img
+                        src={userForm.foto}
+                        alt="Foto Siswa"
+                        referrerPolicy="no-referrer"
+                        className="h-12 w-12 rounded-full object-cover border-2 border-indigo-200 shrink-0"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 rounded-full bg-slate-200 text-slate-500 font-bold flex items-center justify-center text-sm shrink-0 border border-slate-300">
+                        {userForm.nama ? userForm.nama.charAt(0) : "S"}
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-1">
+                      <label className="cursor-pointer inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-[11px] font-bold px-3 py-1.5 rounded-lg transition shadow-2xs">
+                        <Upload className="h-3.5 w-3.5 text-indigo-600" />
+                        <span>Pilih Foto Berkas</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleStudentPhotoUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="text-[10px] text-slate-400 leading-tight">Maksimal 2MB (JPG/PNG). Foto ini otomatis menjadi foto resmi akun siswa.</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap Siswa</label>
                   <input
@@ -922,19 +1030,19 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                   <label className="block text-xs font-semibold text-slate-600 mb-1">Kata Sandi Akun</label>
                   <input
                     type="password"
-                    required
+                    required={!isEditing}
                     value={userForm.password}
                     onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                    placeholder="Masukkan sandi default"
+                    placeholder={isEditing ? "Biarkan kosong jika tidak diubah" : "Masukkan sandi default"}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white"
                   />
                 </div>
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition"
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition shadow-sm"
                   >
-                    {isEditing ? "Perbarui" : "Daftarkan"}
+                    {isEditing ? "Perbarui Data Siswa" : "Daftarkan Siswa"}
                   </button>
                   {isEditing && (
                     <button
@@ -951,14 +1059,17 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
           ) : (
             <div className="lg:col-span-1 bg-slate-50 p-5 border border-slate-200 rounded-2xl text-slate-500 text-xs h-fit leading-relaxed">
               <p className="font-bold text-slate-800 mb-2">Informasi Akses</p>
-              Akun siswa dikelola oleh Admin sekolah. Data siswa akan secara dinamis sinkron dengan absensi, penugasan, dan rekapitulasi nilai rapor kurikulum mandiri.
+              Akun siswa dikelola oleh Guru dan Admin sekolah. Data siswa secara dinamis sinkron dengan absensi, penugasan, dan rekapitulasi nilai rapor kurikulum mandiri.
             </div>
           )}
 
           {/* List Siswa */}
           <div className="lg:col-span-2 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-slate-100">
-              <h3 className="font-display font-bold text-slate-800 text-sm">Data Peserta Didik ({studentsOnly.length} orang)</h3>
+              <div>
+                <h3 className="font-display font-bold text-slate-800 text-sm">Data Peserta Didik ({studentsOnly.length} orang)</h3>
+                <p className="text-[11px] text-slate-400">Guru & Admin dapat mengedit profil, mengunggah foto, dan melakukan reset password siswa.</p>
+              </div>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
                 <input
@@ -977,33 +1088,56 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                 .map((s) => (
                   <div key={s.id} className="py-3 flex justify-between items-center text-xs hover:bg-slate-50/50 px-2 rounded-lg transition">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm">
-                        {s.nama.charAt(0)}
-                      </div>
+                      {s.foto ? (
+                        <img
+                          src={s.foto}
+                          alt={s.nama}
+                          referrerPolicy="no-referrer"
+                          className="h-10 w-10 rounded-xl object-cover border border-indigo-200 shrink-0"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm shrink-0">
+                          {s.nama.charAt(0)}
+                        </div>
+                      )}
                       <div>
                         <span className="font-bold text-slate-900 text-sm block">{s.nama}</span>
                         <div className="flex gap-2 text-slate-400 text-[10px] font-mono mt-0.5">
-                          <span>NISN: {s.nisn}</span>
+                          <span>NISN: {s.nisn || "-"}</span>
                           <span>•</span>
                           <span className="text-indigo-600 font-bold">Kelas {s.kelas}</span>
                         </div>
                         <span className="text-slate-400 block text-[10px]">{s.email}</span>
                       </div>
                     </div>
-                    {user.role === "ADMIN" && (
-                      <div className="flex items-center gap-1">
+                    
+                    {(user.role === "ADMIN" || user.role === "GURU") && (
+                      <div className="flex items-center gap-1.5">
+                        {/* Tombol Reset Password Khusus Guru/Admin */}
+                        <button
+                          onClick={() => handleResetStudentPassword(s)}
+                          className="flex items-center gap-1 text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1 rounded-lg text-[11px] font-bold transition shadow-2xs"
+                          title="Reset Password Siswa"
+                        >
+                          <KeyRound className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Reset Pass</span>
+                        </button>
                         <button
                           onClick={() => handleEditUser(s)}
-                          className="text-slate-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-slate-50 transition"
+                          className="text-slate-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-slate-100 transition"
+                          title="Edit Profil & Foto"
                         >
                           <Edit2 className="h-3.5 w-3.5" />
                         </button>
-                        <button
-                          onClick={() => handleDeleteUser(s.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-50 transition"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {user.role === "ADMIN" && (
+                          <button
+                            onClick={() => handleDeleteUser(s.id)}
+                            className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 transition"
+                            title="Hapus Akun"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1610,6 +1744,88 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
               )}
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Modal Reset Password Siswa (Khusus Guru & Admin) */}
+      {selectedStudentForReset && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-700 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-amber-50 dark:bg-amber-950/40 text-amber-600 rounded-xl">
+                  <KeyRound className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-slate-900 dark:text-white text-base">Reset Kata Sandi Siswa</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Ganti sandi akun siswa dengan aman</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedStudentForReset(null)}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-700/50 p-3.5 rounded-xl border border-slate-150 dark:border-slate-600 text-xs space-y-1">
+              <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                <span>Nama Siswa:</span>
+                <span className="font-bold text-slate-900 dark:text-white">{selectedStudentForReset.nama}</span>
+              </div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                <span>Username Login:</span>
+                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{selectedStudentForReset.username}</span>
+              </div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                <span>Kelas:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedStudentForReset.kelas || "-"}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Kata Sandi Baru</label>
+              <input
+                type="text"
+                value={resetCustomPassword}
+                onChange={(e) => setResetCustomPassword(e.target.value)}
+                placeholder="Masukkan kata sandi baru"
+                className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-indigo-500"
+              />
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
+                Standar bawaan: <code className="font-mono text-indigo-600 dark:text-indigo-400">{selectedStudentForReset.username}123</code>. Siswa nantinya dapat login kembali menggunakan kata sandi ini.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => setSelectedStudentForReset(null)}
+                className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isResetting || !resetCustomPassword}
+                onClick={confirmResetPassword}
+                className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-100 transition flex items-center justify-center gap-1.5"
+              >
+                {isResetting ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    <span>Mereset...</span>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="h-3.5 w-3.5" />
+                    <span>Konfirmasi Reset</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

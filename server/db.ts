@@ -141,7 +141,24 @@ else:
       deadline: "2026-07-30",
       totalPoin: 100,
       tahunPelajaranId: "tp-2",
-      tipe: "TUGAS_TERULIS"
+      tipe: "TUGAS_TERULIS",
+      modePengumpulan: "TEKS_DAN_FILE",
+      maxFileSizeMb: 15,
+      allowedFileTypes: ["doc", "docx", "pdf", "xls", "xlsx", "ppt", "pptx", "py", "zip", "png", "jpg"]
+    },
+    {
+      id: "tug-3",
+      judul: "Tugas Praktikum 2: Perancangan Jaringan Komputer & Topologi LAN",
+      instruksi: "Buatlah laporan hasil simulasi topologi jaringan LAN menggunakan Cisco Packet Tracer atau diagram visual. Lampirkan berkas dokumen (PDF/DOCX) atau berkas presentasi/animasi/video penjelasan simulasi Anda.",
+      elemen: "JKR",
+      kelas: "X",
+      deadline: "2026-08-05",
+      totalPoin: 100,
+      tahunPelajaranId: "tp-2",
+      tipe: "TUGAS_TERULIS",
+      modePengumpulan: "TEKS_DAN_FILE",
+      maxFileSizeMb: 25,
+      allowedFileTypes: ["doc", "docx", "pdf", "ppt", "pptx", "mp4", "webm", "png", "jpg", "zip", "rar"]
     }
   ];
 

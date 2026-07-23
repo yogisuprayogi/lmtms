@@ -11,6 +11,7 @@ export interface User {
   kelas?: string; // Khusus siswa (misal: "X-1", "XI-IPA-2")
   nisn?: string;  // Khusus siswa
   nip?: string;   // Khusus guru
+  foto?: string;  // Base64 data URL atau foto profil
   mfaEnabled?: boolean;
   mfaSecret?: string;
   password?: string;
@@ -111,6 +112,12 @@ export interface Tugas {
   totalPoin: number;
   tipe: 'TUGAS_TERULIS' | 'KUIS';
   soalKuis?: SoalKuis[]; // Jika tipenya KUIS
+  tahunPelajaranId?: string;
+
+  // FITUR PENUGASAN BERKAS & INPUT TEKS
+  modePengumpulan?: 'TEKS' | 'FILE' | 'TEKS_DAN_FILE';
+  maxFileSizeMb?: number; // Batas ukuran berkas dalam MB (misal 5, 10, 25, 50, 100)
+  allowedFileTypes?: string[]; // Daftar ekstensi yang diizinkan (misal: doc, docx, pdf, xls, xlsx, ppt, pptx, gif, png, jpg, mp3, wav, mp4, webm, zip)
 }
 
 export interface SoalKuis {
@@ -130,6 +137,12 @@ export interface PengumpulanTugas {
   catatanGuru?: string;
   tanggalDikumpul: string;
   status: 'BELUM_DINILAI' | 'SELESAI';
+
+  // UNGGAH BERKAS SISWA
+  fileNama?: string;
+  fileTipe?: string;
+  fileUkuran?: number; // Ukuran dalam bytes
+  fileData?: string; // Base64 data URL berkas
 }
 
 export interface Absensi {

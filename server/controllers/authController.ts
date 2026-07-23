@@ -41,8 +41,10 @@ export const getUsers = (req: Request, res: Response) => {
 };
 
 export const updateProfile = (req: Request, res: Response) => {
-  const { userId, nama, email } = req.body;
-  if (!userId || !nama || !email) {
+  const { userId, nama, email, foto } = req.body;
+  const userRole = req.headers["x-user-role"] as string;
+
+  if (!userId || !email) {
     return res.status(400).json({ success: false, message: "Data profil tidak lengkap." });
   }
 
@@ -54,18 +56,73 @@ export const updateProfile = (req: Request, res: Response) => {
   }
 
   const oldUser = db.users[userIndex];
+
+  // Kebijakan: Jika pengguna adalah SISWA, nama dan foto profil dikunci (diambil dari data presensi/induk yang diunggah Guru)
+  let updatedNama = nama;
+  let updatedFoto = foto !== undefined ? foto : oldUser.foto;
+
+  if (oldUser.role === "SISWA") {
+    updatedNama = oldUser.nama; // Tetapkan nama awal dari Guru/Admin
+    if (userRole === "SISWA") {
+      updatedFoto = oldUser.foto; // Tetapkan foto dari Guru/Admin
+    }
+  }
+
   db.users[userIndex] = {
     ...oldUser,
-    nama,
-    email,
+    nama: updatedNama || oldUser.nama,
+    email: email || oldUser.email,
+    foto: updatedFoto
   };
 
   writeDB(db);
 
   // Log profile update
-  addActivityLog(userId, nama, oldUser.role, "UPDATE_PROFILE", `Memperbarui detail profil (Email: ${email}, Nama: ${nama}).`, req.ip);
+  addActivityLog(userId, db.users[userIndex].nama, oldUser.role, "UPDATE_PROFILE", `Memperbarui detail profil (Email: ${email}).`, req.ip);
 
   res.json({ success: true, user: db.users[userIndex] });
+};
+
+export const resetStudentPassword = (req: Request, res: Response) => {
+  const { studentId, newPassword, teacherId, teacherName } = req.body;
+  const requestingRole = req.headers["x-user-role"] as string;
+
+  if (requestingRole !== "GURU" && requestingRole !== "ADMIN") {
+    return res.status(403).json({ success: false, message: "Akses ditolak. Hanya Guru dan Admin yang dapat melakukan reset password siswa." });
+  }
+
+  if (!studentId) {
+    return res.status(400).json({ success: false, message: "ID siswa wajib disertakan." });
+  }
+
+  const db = readDB();
+  const userIndex = db.users.findIndex((u: any) => u.id === studentId);
+
+  if (userIndex === -1) {
+    return res.status(404).json({ success: false, message: "Siswa tidak ditemukan." });
+  }
+
+  const student = db.users[userIndex];
+  const targetPassword = newPassword || `${student.username}123`;
+
+  db.users[userIndex].password = targetPassword;
+  writeDB(db);
+
+  addActivityLog(
+    teacherId || "usr-guru",
+    teacherName || "Guru",
+    requestingRole,
+    "RESET_STUDENT_PASSWORD",
+    `Melakukan reset password siswa ${student.nama} (${student.username}) ke kata sandi baru/default.`,
+    req.ip
+  );
+
+  return res.json({
+    success: true,
+    message: `Kata sandi siswa ${student.nama} berhasil direset! Kata sandi baru: ${targetPassword}`,
+    password: targetPassword,
+    student: db.users[userIndex]
+  });
 };
 
 export const updatePassword = (req: Request, res: Response) => {

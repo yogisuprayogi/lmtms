@@ -24,7 +24,21 @@ export const getTugas = (req: Request, res: Response) => {
 };
 
 export const createTugas = (req: Request, res: Response) => {
-  const { judul, instruksi, elemen, kelas, deadline, totalPoin, tipe, soalKuis, tahunPelajaranId } = req.body;
+  const {
+    judul,
+    instruksi,
+    elemen,
+    kelas,
+    deadline,
+    totalPoin,
+    tipe,
+    soalKuis,
+    tahunPelajaranId,
+    modePengumpulan,
+    maxFileSizeMb,
+    allowedFileTypes
+  } = req.body;
+
   if (!judul || !instruksi || !elemen || !kelas || !deadline || !tahunPelajaranId) {
     return res.status(400).json({ success: false, message: "Semua field utama wajib diisi." });
   }
@@ -41,6 +55,11 @@ export const createTugas = (req: Request, res: Response) => {
     tipe,
     soalKuis: tipe === "KUIS" ? soalKuis : undefined,
     tahunPelajaranId,
+    modePengumpulan: modePengumpulan || "TEKS_DAN_FILE",
+    maxFileSizeMb: Number(maxFileSizeMb) || 10,
+    allowedFileTypes: Array.isArray(allowedFileTypes) && allowedFileTypes.length > 0
+      ? allowedFileTypes
+      : ["doc", "docx", "pdf", "xls", "xlsx", "ppt", "pptx", "gif", "png", "jpg", "mp3", "wav", "mp4", "webm", "zip", "rar"]
   };
 
   if (!db.tugases) db.tugases = [];
@@ -59,8 +78,9 @@ export const getSubmissions = (req: Request, res: Response) => {
 };
 
 export const submitTugas = (req: Request, res: Response) => {
-  const { tugasId, siswaId, siswaNama, jawabanSiswa } = req.body;
-  if (!tugasId || !siswaId || !siswaNama || !jawabanSiswa) {
+  const { tugasId, siswaId, siswaNama, jawabanSiswa, fileNama, fileTipe, fileUkuran, fileData } = req.body;
+
+  if (!tugasId || !siswaId || !siswaNama) {
     return res.status(400).json({ success: false, message: "Data pengumpulan tugas tidak lengkap." });
   }
 
@@ -68,6 +88,49 @@ export const submitTugas = (req: Request, res: Response) => {
   const tugas = (db.tugases || []).find((t: any) => t.id === tugasId);
   if (!tugas) {
     return res.status(404).json({ success: false, message: "Tugas tidak ditemukan." });
+  }
+
+  // Validasi Batasan Mode Pengumpulan & Berkas untuk Tugas Terulis
+  if (tugas.tipe === "TUGAS_TERULIS") {
+    const mode = tugas.modePengumpulan || "TEKS_DAN_FILE";
+    const hasText = jawabanSiswa && jawabanSiswa.trim().length > 0;
+    const hasFile = fileData && fileNama;
+
+    if (mode === "TEKS" && !hasText) {
+      return res.status(400).json({ success: false, message: "Guru mewajibkan jawaban berupa teks langsung pada halaman web." });
+    }
+
+    if (mode === "FILE" && !hasFile) {
+      return res.status(400).json({ success: false, message: "Guru mewajibkan unggah berkas tugas." });
+    }
+
+    if (mode === "TEKS_DAN_FILE" && !hasText && !hasFile) {
+      return res.status(400).json({ success: false, message: "Silakan isi tanggapan teks atau unggah berkas tugas Anda." });
+    }
+
+    // Validasi Ukuran Berkas jika berkas diunggah
+    if (hasFile) {
+      const maxMb = tugas.maxFileSizeMb || 10;
+      const maxBytes = maxMb * 1024 * 1024;
+      if (fileUkuran && Number(fileUkuran) > maxBytes) {
+        return res.status(400).json({
+          success: false,
+          message: `Ukuran berkas melebihi batas maksimal (${maxMb} MB) yang ditentukan oleh guru.`
+        });
+      }
+
+      // Validasi Ekstensi Tipe Berkas jika berkas diunggah
+      if (tugas.allowedFileTypes && Array.isArray(tugas.allowedFileTypes) && tugas.allowedFileTypes.length > 0) {
+        const ext = fileNama.split('.').pop()?.toLowerCase() || '';
+        const isAllowed = tugas.allowedFileTypes.map((t: string) => t.toLowerCase().replace('.', '')).includes(ext);
+        if (!isAllowed) {
+          return res.status(400).json({
+            success: false,
+            message: `Ekstensi berkas .${ext} tidak diizinkan. Guru hanya memperbolehkan format: ${tugas.allowedFileTypes.join(', ')}.`
+          });
+        }
+      }
+    }
   }
 
   const existingSubmissionIdx = (db.pengumpulanTugases || []).findIndex(
@@ -95,11 +158,15 @@ export const submitTugas = (req: Request, res: Response) => {
     tugasId,
     siswaId,
     siswaNama,
-    jawabanSiswa: typeof jawabanSiswa === "object" ? JSON.stringify(jawabanSiswa) : jawabanSiswa,
+    jawabanSiswa: typeof jawabanSiswa === "object" ? JSON.stringify(jawabanSiswa) : (jawabanSiswa || ""),
     nilai: score,
     catatanGuru: status === "SELESAI" ? "Kuis dinilai otomatis oleh sistem LMTMS." : "",
     tanggalDikumpul: new Date().toISOString(),
     status,
+    fileNama: fileNama || "",
+    fileTipe: fileTipe || "",
+    fileUkuran: fileUkuran || 0,
+    fileData: fileData || ""
   };
 
   if (!db.pengumpulanTugases) db.pengumpulanTugases = [];
