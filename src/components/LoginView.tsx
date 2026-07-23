@@ -110,8 +110,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
       <div className="relative z-10 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white/95 backdrop-blur-sm py-8 px-4 shadow-xl border border-slate-100 rounded-2xl sm:px-10">
-
-
           <form className="space-y-4" onSubmit={handleLogin} id="credential-login-form">
             <div>
               <label className="block text-sm font-medium text-slate-700">Nama Pengguna (Username)</label>
@@ -147,14 +145,14 @@ export const LoginView: React.FC<LoginViewProps> = ({
             <button
               type="submit"
               disabled={isLoadingAuth}
-              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition cursor-pointer"
+              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition cursor-pointer font-bold"
               id="btn-login-submit"
             >
               {isLoadingAuth ? "Menghubungkan..." : "Masuk ke Dashboard"}
             </button>
           </form>
 
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center border-t border-slate-100 pt-4">
             <p className="text-xs text-slate-400 font-medium">
               INFORMATIKA [at] {identitas.nama}
             </p>

@@ -7,34 +7,53 @@ import { readDB, writeDB, addActivityLog } from "../db";
 
 export const createUser = (req: Request, res: Response) => {
   const { username, nama, email, role, nip, nisn, kelas, password, foto } = req.body;
-  if (!username || !nama || !email || !role || !password) {
-    return res.status(400).json({ success: false, message: "Kredensial dasar wajib diisi." });
+  if (!nama || !email || !role) {
+    return res.status(400).json({ success: false, message: "Kredensial dasar (nama, email, role) wajib diisi." });
+  }
+
+  // Determine final username & password based on NIP (Guru) and NISN (Siswa)
+  let finalNip = nip || "";
+  let finalNisn = nisn || "";
+  let finalUsername = username;
+  let finalPassword = password;
+
+  if (role === "GURU") {
+    finalNip = nip || username || "197912302022211006";
+    finalUsername = finalNip;
+    if (!finalPassword) finalPassword = finalNip;
+  } else if (role === "SISWA") {
+    finalNisn = nisn || username || "0080000000";
+    finalUsername = finalNisn;
+    if (!finalPassword) finalPassword = finalNisn;
+  } else {
+    if (!finalUsername) finalUsername = "admin";
+    if (!finalPassword) finalPassword = "admin123";
   }
 
   const db = readDB();
   const exists = db.users.find(
-    (u: any) => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === email.toLowerCase()
+    (u: any) => u.username.toLowerCase() === finalUsername.toLowerCase() || u.email.toLowerCase() === email.toLowerCase()
   );
   if (exists) {
-    return res.status(400).json({ success: false, message: "Username atau email sudah terdaftar." });
+    return res.status(400).json({ success: false, message: `Username/Nomor Identitas (${finalUsername}) atau email sudah terdaftar.` });
   }
 
   const newUser: any = {
     id: `usr-${Date.now()}`,
-    username,
+    username: finalUsername,
     nama,
     email,
     role,
-    password,
+    password: finalPassword,
     foto: foto || "",
     mfaEnabled: false,
     mfaSecret: Math.random().toString(36).substring(2, 12).toUpperCase(),
   };
 
   if (role === "GURU") {
-    newUser.nip = nip || "19900101000000000";
+    newUser.nip = finalNip;
   } else if (role === "SISWA") {
-    newUser.nisn = nisn || "0080000000";
+    newUser.nisn = finalNisn;
     newUser.kelas = kelas || "X-1";
   }
 
@@ -68,8 +87,10 @@ export const updateUser = (req: Request, res: Response) => {
 
   if (oldUser.role === "GURU") {
     updatedUser.nip = nip || oldUser.nip;
+    updatedUser.username = updatedUser.nip;
   } else if (oldUser.role === "SISWA") {
     updatedUser.nisn = nisn || oldUser.nisn;
+    updatedUser.username = updatedUser.nisn;
     updatedUser.kelas = kelas || oldUser.kelas;
   }
 

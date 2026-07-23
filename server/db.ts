@@ -43,12 +43,12 @@ export function getInitialSeeds() {
 
   const users = [
     { id: "usr-admin", username: "admin", nama: "Administrator LMTMS", email: "admin@lmtms.sch.id", role: "ADMIN", password: "admin123", mfaEnabled: false, mfaSecret: "JBSWY3DPEHPK3PXP" },
-    { id: "usr-yogi", username: "yogi", nama: "Yogi Suprayogi, S.Kom.", email: "yogisuprayogi02@guru.smk.belajar.id", role: "GURU", nip: "198905202015031002", password: "yogi123", mfaEnabled: false, mfaSecret: "OBQXG43XN5ZGI42K" },
-    { id: "usr-ahmad", username: "ahmad", nama: "Ahmad Dhani", email: "ahmad@siswa.lmtms.sch.id", role: "SISWA", kelas: "X-1", nisn: "0081234561", password: "ahmad123", mfaEnabled: false, mfaSecret: "MFRGGZDFMZTWQ2LK" },
-    { id: "usr-budi", username: "budi", nama: "Budi Setiawan", email: "budi@siswa.lmtms.sch.id", role: "SISWA", kelas: "X-1", nisn: "0081234562", password: "budi123", mfaEnabled: false, mfaSecret: "ONSWG4TFOQWW2L3M" },
-    { id: "usr-citra", username: "citra", nama: "Citra Lestari", email: "citra@siswa.lmtms.sch.id", role: "SISWA", kelas: "X-1", nisn: "0081234563", password: "citra123", mfaEnabled: false, mfaSecret: "NFSG22LPNRQX22LP" },
-    { id: "usr-dedi", username: "dedi", nama: "Dedi Kurniawan", email: "dedi@siswa.lmtms.sch.id", role: "SISWA", kelas: "X-1", nisn: "0081234564", password: "dedi123", mfaEnabled: false, mfaSecret: "MVXGGZDFMFTX22LP" },
-    { id: "usr-elly", username: "elly", nama: "Elly Setyowati", email: "elly@siswa.lmtms.sch.id", role: "SISWA", kelas: "X-1", nisn: "0081234565", password: "elly123", mfaEnabled: false, mfaSecret: "OJXGGZDFMFTX22LP" },
+    { id: "usr-yogi", username: "197912302022211006", nama: "Yogi Suprayogi, SE.", email: "yogisuprayogi02@guru.smk.belajar.id", role: "GURU", nip: "197912302022211006", password: "197912302022211006", mfaEnabled: false, mfaSecret: "OBQXG43XN5ZGI42K" },
+    { id: "usr-ahmad", username: "0081234561", nama: "Ahmad Dhani", email: "ahmad@siswa.lmtms.sch.id", role: "SISWA", kelas: "X-1", nisn: "0081234561", password: "0081234561", mfaEnabled: false, mfaSecret: "MFRGGZDFMZTWQ2LK" },
+    { id: "usr-budi", username: "0081234562", nama: "Budi Setiawan", email: "budi@siswa.lmtms.sch.id", role: "SISWA", kelas: "X-1", nisn: "0081234562", password: "0081234562", mfaEnabled: false, mfaSecret: "ONSWG4TFOQWW2L3M" },
+    { id: "usr-citra", username: "0081234563", nama: "Citra Lestari", email: "citra@siswa.lmtms.sch.id", role: "SISWA", kelas: "X-1", nisn: "0081234563", password: "0081234563", mfaEnabled: false, mfaSecret: "NFSG22LPNRQX22LP" },
+    { id: "usr-dedi", username: "0081234564", nama: "Dedi Kurniawan", email: "dedi@siswa.lmtms.sch.id", role: "SISWA", kelas: "X-1", nisn: "0081234564", password: "0081234564", mfaEnabled: false, mfaSecret: "MVXGGZDFMFTX22LP" },
+    { id: "usr-elly", username: "0081234565", nama: "Elly Setyowati", email: "elly@siswa.lmtms.sch.id", role: "SISWA", kelas: "X-1", nisn: "0081234565", password: "0081234565", mfaEnabled: false, mfaSecret: "OJXGGZDFMFTX22LP" },
   ];
 
   const materis = [
@@ -377,6 +377,41 @@ export function readDB() {
       const data = fs.readFileSync(DB_FILE, "utf-8");
       const parsed = JSON.parse(data);
       let changed = false;
+
+      // Ensure user credentials align with NISN (for Siswa) and NIP (for Guru)
+      if (parsed.users) {
+        parsed.users = parsed.users.map((u: any) => {
+          if (u.id === "usr-yogi" || u.email === "yogisuprayogi02@guru.smk.belajar.id") {
+            if (u.nama !== "Yogi Suprayogi, SE." || u.username !== "197912302022211006") {
+              changed = true;
+              return {
+                ...u,
+                nama: "Yogi Suprayogi, SE.",
+                username: "197912302022211006",
+                nip: "197912302022211006",
+                password: "197912302022211006"
+              };
+            }
+          }
+          if (u.role === "SISWA" && u.nisn && (u.username !== u.nisn || u.password === "ahmad123" || u.password === "budi123" || u.password === "citra123" || u.password === "dedi123" || u.password === "elly123")) {
+            changed = true;
+            return {
+              ...u,
+              username: u.nisn,
+              password: u.password && !["ahmad123", "budi123", "citra123", "dedi123", "elly123"].includes(u.password) ? u.password : u.nisn
+            };
+          }
+          if (u.role === "GURU" && u.nip && u.username !== u.nip) {
+            changed = true;
+            return {
+              ...u,
+              username: u.nip,
+              password: u.password && u.password !== "yogi123" ? u.password : u.nip
+            };
+          }
+          return u;
+        });
+      }
 
       // Ensure all academic management arrays are initialized
       if (!parsed.rombels) {

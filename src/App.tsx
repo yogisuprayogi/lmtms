@@ -74,11 +74,11 @@ import { TugasView } from "./components/TugasView";
 export default function App() {
   // Default demo user (Guru Pengampu) if no session saved
   const defaultGuruUser: User = {
-    id: "u1",
-    username: "yogi",
-    nama: "Yogi Suprayogi, S.Kom.",
+    id: "usr-yogi",
+    username: "197912302022211006",
+    nama: "Yogi Suprayogi, SE.",
     role: "GURU",
-    nip: "19850615 201001 1 012",
+    nip: "197912302022211006",
     email: "yogisuprayogi02@guru.smk.belajar.id"
   };
 
@@ -665,8 +665,8 @@ export default function App() {
   const quickLogin = async (role: "GURU" | "SISWA" | "ADMIN") => {
     let u = "admin";
     let p = "admin123";
-    if (role === "GURU") { u = "yogi"; p = "yogi123"; }
-    else if (role === "SISWA") { u = "ahmad"; p = "ahmad123"; }
+    if (role === "GURU") { u = "197912302022211006"; p = "197912302022211006"; }
+    else if (role === "SISWA") { u = "0081234561"; p = "0081234561"; }
 
     setUsernameInput(u);
     setPasswordInput(p);

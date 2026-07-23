@@ -13,7 +13,7 @@ export const login = (req: Request, res: Response) => {
   if (user) {
     const isCorrectPassword = user.password 
       ? password === user.password 
-      : (password === `${username}123` || password === "admin123" || password === "yogi123");
+      : (password === user.username || password === user.nisn || password === user.nip || password === "admin123");
 
     if (isCorrectPassword) {
       // Log successful login
@@ -27,7 +27,7 @@ export const login = (req: Request, res: Response) => {
 
   return res.status(401).json({
     success: false,
-    message: "Kredensial salah. Gunakan username terdaftar (misal: yogi / yogi123, ahmad / ahmad123)"
+    message: "Kredensial salah. Gunakan NIP untuk Guru / NISN untuk Siswa (misal Guru Yogi Suprayogi: 197912302022211006)"
   });
 };
 
@@ -103,7 +103,7 @@ export const resetStudentPassword = (req: Request, res: Response) => {
   }
 
   const student = db.users[userIndex];
-  const targetPassword = newPassword || `${student.username}123`;
+  const targetPassword = newPassword || student.nisn || student.username;
 
   db.users[userIndex].password = targetPassword;
   writeDB(db);

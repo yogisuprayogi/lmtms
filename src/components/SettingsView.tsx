@@ -313,7 +313,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-slate-700">
+                      Username ({user.role === "SISWA" ? "NISN" : user.role === "GURU" ? "NIP" : "Admin"})
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-mono font-semibold flex items-center gap-1">
+                      <Lock className="h-3 w-3 text-slate-400" /> Permanen
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    disabled
+                    value={user.username}
+                    className="mt-1 block w-full px-3 py-2 border border-slate-200 rounded-xl shadow-sm bg-slate-100 text-slate-600 cursor-not-allowed font-mono text-sm font-bold"
+                  />
+                </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-sm font-medium text-slate-700">Nama Lengkap</label>

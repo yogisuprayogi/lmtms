@@ -799,7 +799,15 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                     type="text"
                     required
                     value={userForm.nip}
-                    onChange={(e) => setUserForm({ ...userForm, nip: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setUserForm({
+                        ...userForm,
+                        nip: val,
+                        username: val,
+                        password: (!userForm.password || userForm.password === userForm.nip) ? val : userForm.password
+                      });
+                    }}
                     placeholder="18 digit angka NIP"
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white font-mono"
                   />
@@ -816,25 +824,23 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Username Sistem</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Username Sistem (Otomatis = NIP)</label>
                   <input
                     type="text"
-                    required
-                    disabled={isEditing}
-                    value={userForm.username}
-                    onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-                    placeholder="Contoh: herawati"
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white disabled:bg-slate-50 font-mono"
+                    disabled
+                    value={userForm.nip || userForm.username}
+                    placeholder="Sesuai NIP Guru"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-slate-100 text-slate-600 cursor-not-allowed font-mono font-bold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Kata Sandi Akun</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Kata Sandi Akun (Default = NIP)</label>
                   <input
                     type="password"
-                    required
+                    required={!isEditing}
                     value={userForm.password}
                     onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                    placeholder="Masukkan sandi default"
+                    placeholder={isEditing ? "Biarkan kosong jika tidak diubah" : "Default sama dengan NIP"}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white"
                   />
                 </div>
@@ -981,12 +987,20 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">NISN</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">NISN (Nomor Induk Siswa Nasional)</label>
                   <input
                     type="text"
                     required
                     value={userForm.nisn}
-                    onChange={(e) => setUserForm({ ...userForm, nisn: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setUserForm({
+                        ...userForm,
+                        nisn: val,
+                        username: val,
+                        password: (!userForm.password || userForm.password === userForm.nisn) ? val : userForm.password
+                      });
+                    }}
                     placeholder="10 digit nomor NISN"
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white font-mono"
                   />
@@ -1015,25 +1029,23 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Username Login</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Username Login (Otomatis = NISN)</label>
                   <input
                     type="text"
-                    required
-                    disabled={isEditing}
-                    value={userForm.username}
-                    onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-                    placeholder="Contoh: ahmad"
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white disabled:bg-slate-50 font-mono"
+                    disabled
+                    value={userForm.nisn || userForm.username}
+                    placeholder="Sesuai NISN Siswa"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-slate-100 text-slate-600 cursor-not-allowed font-mono font-bold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Kata Sandi Akun</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Kata Sandi Akun (Default = NISN)</label>
                   <input
                     type="password"
                     required={!isEditing}
                     value={userForm.password}
                     onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                    placeholder={isEditing ? "Biarkan kosong jika tidak diubah" : "Masukkan sandi default"}
+                    placeholder={isEditing ? "Biarkan kosong jika tidak diubah" : "Default sama dengan NISN"}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white"
                   />
                 </div>
