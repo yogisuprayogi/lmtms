@@ -32,10 +32,50 @@ import {
   FileUp,
   Eye,
   Filter,
-  Info
+  Info,
+  Image as ImageIcon
 } from "lucide-react";
 import { User, TahunPelajaran } from "../types";
 import { InteractiveCalendar } from "./InteractiveCalendar";
+
+// Helper function to compress and convert image files to base64 Data URLs
+const compressAndReadImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 400;
+        const MAX_HEIGHT = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = () => resolve(e.target?.result as string);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+};
 
 interface Rombel {
   id: string;
@@ -128,6 +168,7 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
     kelas: string;
     email: string;
     password?: string;
+    foto?: string;
     isValid: boolean;
     errorReason?: string;
   }>>([]);
@@ -432,21 +473,24 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
         "NISN": "0081234567",
         "Kelas": "X-1",
         "Email": "ahmad.rizky@siswa.lmtms.sch.id",
-        "Password Default (Opsional)": "0081234567"
+        "Password Default (Opsional)": "0081234567",
+        "Foto / URL Foto (Opsional)": "0081234567.jpg"
       },
       {
         "Nama Lengkap": "Siti Nurhaliza",
         "NISN": "0081234568",
         "Kelas": "X-1",
         "Email": "siti.nurhaliza@siswa.lmtms.sch.id",
-        "Password Default (Opsional)": "0081234568"
+        "Password Default (Opsional)": "0081234568",
+        "Foto / URL Foto (Opsional)": "0081234568.png"
       },
       {
         "Nama Lengkap": "Dharma Putra Utama",
         "NISN": "0081234569",
         "Kelas": "XI-1",
         "Email": "dharma.putra@siswa.lmtms.sch.id",
-        "Password Default (Opsional)": "0081234569"
+        "Password Default (Opsional)": "0081234569",
+        "Foto / URL Foto (Opsional)": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
       }
     ];
 
@@ -456,7 +500,8 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
       { wch: 15 },
       { wch: 10 },
       { wch: 32 },
-      { wch: 28 }
+      { wch: 28 },
+      { wch: 35 }
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -502,6 +547,24 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
           const email = String(row["Email"] || row["email"] || row["Alamat Email"] || (nisn ? `${nisn}@siswa.lmtms.sch.id` : "")).trim().toLowerCase();
           const password = String(row["Password Default (Opsional)"] || row["Password"] || row["password"] || nisn).trim();
 
+          const rawFoto = String(
+            row["Foto / URL Foto (Opsional)"] ||
+            row["Foto / URL Foto"] ||
+            row["Foto Profil"] ||
+            row["Link Foto"] ||
+            row["Foto"] ||
+            row["foto"] ||
+            row["URL Foto"] ||
+            row["Photo"] ||
+            row["Avatar"] ||
+            ""
+          ).trim();
+
+          let foto = "";
+          if (rawFoto.startsWith("http://") || rawFoto.startsWith("https://") || rawFoto.startsWith("data:image/")) {
+            foto = rawFoto;
+          }
+
           let isValid = true;
           let errorReason = "";
 
@@ -519,7 +582,7 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
             errorReason = `Email (${email}) sudah terdaftar`;
           }
 
-          return { nama, nisn, kelas, email, password, isValid, errorReason };
+          return { nama, nisn, kelas, email, password, foto, isValid, errorReason };
         });
 
         setParsedStudents(processed);
@@ -534,7 +597,82 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
     };
 
     reader.readAsArrayBuffer(file);
-    // Reset file value to allow re-uploading the same file if needed
+    e.target.value = "";
+  };
+
+  // Handler for uploading multiple photos at once and auto-matching by NISN or Student Name
+  const handleBatchPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const imageFiles = (Array.from(files) as File[]).filter((f) => f.type.startsWith("image/"));
+    if (imageFiles.length === 0) {
+      triggerNotification("error", "Tidak ada berkas foto valid (JPG/PNG/WEBP) yang dipilih.");
+      return;
+    }
+
+    if (parsedStudents.length === 0) {
+      triggerNotification("error", "Silakan unggah berkas data siswa (XLSX/CSV) terlebih dahulu agar foto dapat dicocokkan.");
+      return;
+    }
+
+    triggerNotification("success", `Memproses & mengompres ${imageFiles.length} berkas foto siswa...`);
+
+    let matchedCount = 0;
+    const updatedStudents = [...parsedStudents];
+
+    for (const file of imageFiles) {
+      try {
+        const base64Data = await compressAndReadImage(file);
+        const rawFileName = file.name.substring(0, file.name.lastIndexOf(".")).toLowerCase().trim();
+        const cleanedFileName = rawFileName.replace(/[-_]/g, " ").replace(/\s+/g, " ");
+
+        // Match student by NISN, Name, or Email prefix
+        const index = updatedStudents.findIndex((s) => {
+          const nisnClean = (s.nisn || "").toLowerCase().trim();
+          const namaClean = (s.nama || "").toLowerCase().replace(/[-_]/g, " ").replace(/\s+/g, " ").trim();
+          const emailPrefix = (s.email || "").split("@")[0].toLowerCase().trim();
+
+          if (nisnClean && (rawFileName.includes(nisnClean) || nisnClean.includes(rawFileName))) return true;
+          if (namaClean && (cleanedFileName.includes(namaClean) || namaClean.includes(cleanedFileName))) return true;
+          if (emailPrefix && (cleanedFileName.includes(emailPrefix) || emailPrefix.includes(cleanedFileName))) return true;
+          return false;
+        });
+
+        if (index !== -1) {
+          updatedStudents[index] = {
+            ...updatedStudents[index],
+            foto: base64Data
+          };
+          matchedCount++;
+        }
+      } catch (err) {
+        console.error("Gagal membaca foto:", file.name, err);
+      }
+    }
+
+    setParsedStudents(updatedStudents);
+    if (matchedCount > 0) {
+      triggerNotification("success", `Berhasil mencocokkan ${matchedCount} foto profil dengan data siswa secara otomatis!`);
+    } else {
+      triggerNotification("error", `Foto berhasil diproses (${imageFiles.length} foto), namun tidak ada yang cocok dengan NISN atau Nama dalam daftar. Pastikan nama berkas foto sesuai NISN (misal: 0081234567.jpg) atau Nama Siswa.`);
+    }
+    e.target.value = "";
+  };
+
+  // Handler for uploading individual student photo inside the preview modal
+  const handleSingleStudentPhotoInPreview = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const base64Data = await compressAndReadImage(file);
+      const updated = [...parsedStudents];
+      updated[index] = { ...updated[index], foto: base64Data };
+      setParsedStudents(updated);
+      triggerNotification("success", `Foto profil untuk ${updated[index].nama} berhasil terpasang!`);
+    } catch (err) {
+      triggerNotification("error", "Gagal membaca berkas foto.");
+    }
     e.target.value = "";
   };
 
@@ -845,12 +983,12 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
       {/* 1. TAHUN & SEMESTER */}
       {activeSubTab === "tahun" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="subtab-tahun">
-          {/* Admin & Guru Input Form */}
-          {user.role === "ADMIN" || user.role === "GURU" ? (
+          {/* Admin Input Form / Guru Info Card */}
+          {user.role === "ADMIN" ? (
             <div className="lg:col-span-1 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4 h-fit">
               <h3 className="font-display font-bold text-slate-800 text-sm flex items-center gap-1.5 border-b border-slate-100 pb-3">
                 <Plus className="h-4 w-4 text-indigo-600" />
-                <span>Tambah Tahun Pelajaran</span>
+                <span>Tambah Tahun Pelajaran (Admin)</span>
               </h3>
               <form onSubmit={handleCreateTp} className="space-y-4">
                 <div>
@@ -883,6 +1021,19 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                   <span>Tambahkan Tahun</span>
                 </button>
               </form>
+            </div>
+          ) : user.role === "GURU" ? (
+            <div className="lg:col-span-1 bg-gradient-to-br from-indigo-50/80 to-slate-50 p-5 border border-indigo-150 rounded-2xl text-slate-700 text-xs h-fit space-y-3 shadow-2xs">
+              <div className="flex items-center gap-2 text-indigo-700 font-bold border-b border-indigo-100 pb-2">
+                <Calendar className="h-4 w-4 text-indigo-600" />
+                <span>Akses Fleksibilitas Tahun Pelajaran</span>
+              </div>
+              <p className="leading-relaxed text-slate-600">
+                Sebagai <b>Guru Pengampu</b>, Anda bebas memilih dan mengaktifkan Tahun Pelajaran yang ingin diakses kapan saja dari daftar di sebelah kanan atau lewat pemilih tahun di <b>Header</b> atas.
+              </p>
+              <div className="bg-white/80 p-3 rounded-xl border border-indigo-100 text-[11px] text-slate-500 leading-normal">
+                💡 <b>Catatan Otoritas:</b> Penambahan/pembuatan tahun pelajaran baru secara sistem tetap merupakan kewenangan Administrator Sekolah.
+              </div>
             </div>
           ) : (
             <div className="lg:col-span-1 bg-slate-50 p-5 border border-slate-200 rounded-2xl text-slate-500 text-xs h-fit leading-relaxed">
@@ -1326,11 +1477,40 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                     />
                     <UploadCloud className="h-8 w-8 text-indigo-600 mx-auto mb-1.5" />
                     <p className="text-xs font-bold text-slate-800">
-                      {bulkFileName ? bulkFileName : "Pilih / Seret Berkas Spreadsheet"}
+                      {bulkFileName ? bulkFileName : "1. Pilih / Seret Berkas Spreadsheet Data Siswa"}
                     </p>
                     <p className="text-[10px] text-slate-500 mt-0.5">
                       Format didukung: .XLSX, .XLS, atau .CSV
                     </p>
+                  </div>
+
+                  {/* Batch Photo Upload Box */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                      <span className="flex items-center gap-1.5">
+                        <Camera className="h-4 w-4 text-indigo-600" />
+                        <span>2. Unggah Foto Profil Siswa Serentak (Opsional)</span>
+                      </span>
+                      {parsedStudents.length > 0 && (
+                        <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200 font-semibold">
+                          {parsedStudents.filter((s) => !!s.foto).length} / {parsedStudents.length} foto terlampir
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-tight">
+                      Pilih sekaligus banyak berkas foto siswa (JPG/PNG). Sistem akan otomatis mencocokkan foto ke data siswa berdasarkan NISN (contoh: <code className="font-mono text-indigo-600 font-bold">0081234567.jpg</code>) atau Nama Siswa.
+                    </p>
+                    <label className="cursor-pointer inline-flex items-center justify-center gap-1.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 hover:border-indigo-300 font-bold py-1.5 px-3 rounded-lg text-xs transition w-full shadow-2xs">
+                      <ImageIcon className="h-3.5 w-3.5 text-indigo-600" />
+                      <span>{parsedStudents.filter((s) => !!s.foto).length > 0 ? "Tambah / Perbarui Foto Siswa Serentak" : "Pilih Banyak Berkas Foto Siswa (Multi-Select)"}</span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleBatchPhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
 
                   {/* Parsed Students Preview */}
@@ -2229,6 +2409,10 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                   <span>{parsedStudents.filter(s => s.isValid).length} Siap Diimpor</span>
                 </span>
+                <span className="bg-indigo-100 text-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                  <Camera className="h-3.5 w-3.5 text-indigo-600" />
+                  <span>{parsedStudents.filter(s => !!s.foto).length} Foto Terlampir</span>
+                </span>
                 {parsedStudents.filter(s => !s.isValid).length > 0 && (
                   <span className="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
                     <XCircle className="h-3.5 w-3.5 text-amber-600" />
@@ -2338,8 +2522,9 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="bg-slate-100 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 sticky top-0">
-                        <th className="p-2.5 w-12 text-center">No.</th>
-                        <th className="p-2.5 w-36">Status Format</th>
+                        <th className="p-2.5 w-10 text-center">No.</th>
+                        <th className="p-2.5 w-16 text-center">Foto</th>
+                        <th className="p-2.5 w-32">Status Format</th>
                         <th className="p-2.5">Nama Lengkap Siswa</th>
                         <th className="p-2.5 w-32 font-mono">NISN</th>
                         <th className="p-2.5 w-24">Kelas</th>
@@ -2359,6 +2544,30 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                         >
                           <td className="p-2.5 text-center text-slate-400 font-mono text-[11px]">
                             {idx + 1}
+                          </td>
+                          <td className="p-2 text-center">
+                            <div className="relative inline-block group">
+                              {s.foto ? (
+                                <img
+                                  src={s.foto}
+                                  alt={s.nama}
+                                  className="w-8 h-8 rounded-full object-cover border border-indigo-200 shadow-2xs mx-auto"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 font-bold flex items-center justify-center text-[10px] mx-auto border border-slate-200 dark:border-slate-600">
+                                  {s.nama ? s.nama.charAt(0).toUpperCase() : "?"}
+                                </div>
+                              )}
+                              <label className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 hover:bg-indigo-50 border border-slate-200 dark:border-slate-600 p-0.5 rounded-full cursor-pointer shadow-2xs transition" title="Unggah / pasang foto profil untuk siswa ini">
+                                <Camera className="h-2.5 w-2.5 text-indigo-600" />
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleSingleStudentPhotoInPreview(idx, e)}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
                           </td>
                           <td className="p-2.5">
                             {s.isValid ? (
@@ -2398,14 +2607,25 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
 
             {/* Modal Footer */}
             <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="relative w-full sm:w-auto">
-                <label className="cursor-pointer inline-flex items-center justify-center gap-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-2xs w-full sm:w-auto">
+              <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto">
+                <label className="cursor-pointer inline-flex items-center justify-center gap-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 px-3 py-2 rounded-xl text-xs font-bold transition shadow-2xs">
                   <UploadCloud className="h-4 w-4 text-indigo-600" />
-                  <span>Pilih Berkas Spreadsheet Lain</span>
+                  <span>Spreadsheet Lain</span>
                   <input
                     type="file"
                     accept=".csv, .xls, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
                     onChange={handleBulkFileChange}
+                    className="hidden"
+                  />
+                </label>
+                <label className="cursor-pointer inline-flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 px-3 py-2 rounded-xl text-xs font-bold transition shadow-2xs">
+                  <Camera className="h-4 w-4 text-indigo-600" />
+                  <span>Lampirkan Foto Banyak</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleBatchPhotoUpload}
                     className="hidden"
                   />
                 </label>

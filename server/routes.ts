@@ -36,9 +36,9 @@ router.post("/users/reset-password", enforceRole(["GURU", "ADMIN"]), authControl
 router.put("/users/mfa", authController.toggleMfa);
 router.get("/activity-logs", authController.getActivityLogs);
 
-// 2. TAHUN PELAJARAN ROUTES (Guru & Admin for creation/activation)
+// 2. TAHUN PELAJARAN ROUTES (Admin for creation, Guru & Admin for activation)
 router.get("/tahun-pelajaran", tahunPelajaranController.getTahunPelajaran);
-router.post("/tahun-pelajaran", enforceRole(["GURU", "ADMIN"]), tahunPelajaranController.createTahunPelajaran);
+router.post("/tahun-pelajaran", enforceRole(["ADMIN"]), tahunPelajaranController.createTahunPelajaran);
 router.post("/tahun-pelajaran/aktifkan", enforceRole(["GURU", "ADMIN"]), tahunPelajaranController.aktifkanTahunPelajaran);
 
 // 3. PERANGKAT PEMBELAJARAN ROUTES (Guru & Admin can edit, Siswa can only read)

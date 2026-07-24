@@ -122,7 +122,7 @@ export const createBulkUsers = (req: Request, res: Response) => {
       nisn,
       kelas,
       password: String(password).trim() || nisn,
-      foto: "",
+      foto: s.foto || s.Foto || s.urlFoto || s.fotoUrl || "",
       mfaEnabled: false,
       mfaSecret: Math.random().toString(36).substring(2, 12).toUpperCase(),
     };
