@@ -70,6 +70,7 @@ router.post("/analitika/import", enforceRole(["GURU", "ADMIN"]), analitikaContro
 
 // 8. ACADEMIC MANAGEMENT ROUTES
 router.post("/academic/users", enforceRole(["ADMIN", "GURU"]), academicController.createUser);
+router.post("/academic/users/bulk", enforceRole(["ADMIN", "GURU"]), academicController.createBulkUsers);
 router.put("/academic/users/:id", enforceRole(["ADMIN", "GURU"]), academicController.updateUser);
 router.delete("/academic/users/:id", enforceRole(["ADMIN", "GURU"]), academicController.deleteUser);
 

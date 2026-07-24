@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
 import {
   Calendar,
   Users,
@@ -20,7 +21,15 @@ import {
   Settings,
   KeyRound,
   Camera,
-  Upload
+  Upload,
+  FileSpreadsheet,
+  Download,
+  FileText,
+  UploadCloud,
+  CheckCircle2,
+  XCircle,
+  Sparkles,
+  FileUp
 } from "lucide-react";
 import { User, TahunPelajaran } from "../types";
 import { InteractiveCalendar } from "./InteractiveCalendar";
@@ -105,6 +114,20 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
   const [mapForm, setMapForm] = useState({ id: "", guruId: "", kelas: "X-1", elemen: "BK" });
 
   const [isEditing, setIsEditing] = useState(false);
+
+  // Bulk Student Import State
+  const [studentInputMode, setStudentInputMode] = useState<"single" | "bulk">("single");
+  const [parsedStudents, setParsedStudents] = useState<Array<{
+    nama: string;
+    nisn: string;
+    kelas: string;
+    email: string;
+    password?: string;
+    isValid: boolean;
+    errorReason?: string;
+  }>>([]);
+  const [bulkFileName, setBulkFileName] = useState("");
+  const [isSubmittingBulk, setIsSubmittingBulk] = useState(false);
 
   // Reset Password Modal State
   const [selectedStudentForReset, setSelectedStudentForReset] = useState<User | null>(null);
@@ -388,6 +411,151 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
   const handleResetStudentPassword = (student: User) => {
     setSelectedStudentForReset(student);
     setResetCustomPassword(`${student.username}123`);
+  };
+
+  // ==========================================
+  // BULK STUDENT UPLOAD HANDLERS
+  // ==========================================
+  const handleDownloadTemplate = (format: "xlsx" | "csv") => {
+    const sampleData = [
+      {
+        "Nama Lengkap": "Ahmad Rizky Pratama",
+        "NISN": "0081234567",
+        "Kelas": "X-1",
+        "Email": "ahmad.rizky@siswa.lmtms.sch.id",
+        "Password Default (Opsional)": "0081234567"
+      },
+      {
+        "Nama Lengkap": "Siti Nurhaliza",
+        "NISN": "0081234568",
+        "Kelas": "X-1",
+        "Email": "siti.nurhaliza@siswa.lmtms.sch.id",
+        "Password Default (Opsional)": "0081234568"
+      },
+      {
+        "Nama Lengkap": "Dharma Putra Utama",
+        "NISN": "0081234569",
+        "Kelas": "XI-1",
+        "Email": "dharma.putra@siswa.lmtms.sch.id",
+        "Password Default (Opsional)": "0081234569"
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    worksheet["!cols"] = [
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 32 },
+      { wch: 28 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Siswa");
+
+    if (format === "xlsx") {
+      XLSX.writeFile(workbook, "Template_Format_Upload_Siswa_LMTMS.xlsx");
+    } else {
+      XLSX.writeFile(workbook, "Template_Format_Upload_Siswa_LMTMS.csv", { bookType: "csv" });
+    }
+
+    triggerNotification("success", `Template format upload siswa (.${format.toUpperCase()}) berhasil diunduh!`);
+  };
+
+  const handleBulkFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setBulkFileName(file.name);
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+        if (!jsonData || jsonData.length === 0) {
+          triggerNotification("error", "Berkas tidak berisi data atau format tidak sesuai.");
+          setParsedStudents([]);
+          return;
+        }
+
+        const existingNisns = new Set(usersList.map((u) => u.nisn || u.username));
+        const existingEmails = new Set(usersList.map((u) => u.email ? u.email.toLowerCase() : ""));
+
+        const processed = jsonData.map((row) => {
+          const nama = String(row["Nama Lengkap"] || row["Nama"] || row["nama"] || row["Name"] || "").trim();
+          const nisn = String(row["NISN"] || row["nisn"] || row["Nomor NISN"] || "").trim();
+          const kelas = String(row["Kelas"] || row["Rombel"] || row["kelas"] || "X-1").trim();
+          const email = String(row["Email"] || row["email"] || row["Alamat Email"] || (nisn ? `${nisn}@siswa.lmtms.sch.id` : "")).trim().toLowerCase();
+          const password = String(row["Password Default (Opsional)"] || row["Password"] || row["password"] || nisn).trim();
+
+          let isValid = true;
+          let errorReason = "";
+
+          if (!nama) {
+            isValid = false;
+            errorReason = "Nama siswa kosong";
+          } else if (!nisn) {
+            isValid = false;
+            errorReason = "NISN kosong";
+          } else if (existingNisns.has(nisn)) {
+            isValid = false;
+            errorReason = `NISN (${nisn}) sudah terdaftar`;
+          } else if (existingEmails.has(email)) {
+            isValid = false;
+            errorReason = `Email (${email}) sudah terdaftar`;
+          }
+
+          return { nama, nisn, kelas, email, password, isValid, errorReason };
+        });
+
+        setParsedStudents(processed);
+        triggerNotification("success", `Tersaring ${processed.length} baris data dari berkas ${file.name}.`);
+      } catch (err) {
+        console.error("Gagal membaca file spreadsheet:", err);
+        triggerNotification("error", "Gagal membaca berkas. Pastikan format file .xlsx, .xls, atau .csv.");
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleProcessBulkImport = async () => {
+    const validStudents = parsedStudents.filter((s) => s.isValid);
+    if (validStudents.length === 0) {
+      triggerNotification("error", "Tidak ada data siswa valid yang siap diimpor.");
+      return;
+    }
+
+    setIsSubmittingBulk(true);
+    try {
+      const res = await fetch("/api/academic/users/bulk", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": user.role
+        },
+        body: JSON.stringify({ students: validStudents })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        triggerNotification("success", data.message || `Berhasil mengimpor ${validStudents.length} data siswa!`);
+        setParsedStudents([]);
+        setBulkFileName("");
+        loadAllData();
+      } else {
+        triggerNotification("error", data.message || "Gagal mengimpor data siswa.");
+      }
+    } catch (err) {
+      triggerNotification("error", "Terjadi kesalahan jaringan saat impor data.");
+    } finally {
+      setIsSubmittingBulk(false);
+    }
   };
 
   const confirmResetPassword = async () => {
@@ -927,146 +1095,292 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
       {/* 4. DAFTAR SISWA */}
       {activeSubTab === "siswa" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="subtab-siswa">
-          {/* Siswa Form Editor (Admin & Guru Access) */}
+          {/* Siswa Form Editor / Bulk Upload Panel (Admin & Guru Access) */}
           {(user.role === "ADMIN" || user.role === "GURU") ? (
             <div className="lg:col-span-1 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4 h-fit">
-              <h3 className="font-display font-bold text-slate-800 text-sm flex items-center justify-between border-b border-slate-100 pb-3">
+              {/* Header with Mode Switcher */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
                 <div className="flex items-center gap-1.5">
-                  {isEditing ? <Edit2 className="h-4 w-4 text-amber-500" /> : <Plus className="h-4 w-4 text-indigo-600" />}
-                  <span>{isEditing ? "Ubah Data & Foto Siswa" : "Daftarkan Siswa Baru"}</span>
+                  {isEditing ? (
+                    <Edit2 className="h-4 w-4 text-amber-500" />
+                  ) : studentInputMode === "bulk" ? (
+                    <UploadCloud className="h-4 w-4 text-indigo-600" />
+                  ) : (
+                    <Plus className="h-4 w-4 text-indigo-600" />
+                  )}
+                  <span className="font-display font-bold text-slate-800 text-sm">
+                    {isEditing ? "Ubah Data Siswa" : studentInputMode === "bulk" ? "Upload Siswa Serentak" : "Daftarkan Siswa Baru"}
+                  </span>
                 </div>
-                {user.role === "GURU" && (
-                  <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">Guru Mode</span>
-                )}
-              </h3>
-              <form onSubmit={handleSaveUser} className="space-y-4">
-                {/* Foto Profil Input & Preview */}
-                <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                  <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1">
-                    <Camera className="h-3.5 w-3.5 text-indigo-600" />
-                    <span>Foto Profil Siswa (Diunggah Guru)</span>
-                  </label>
-                  <div className="flex items-center gap-3 pt-1">
-                    {userForm.foto ? (
-                      <img
-                        src={userForm.foto}
-                        alt="Foto Siswa"
-                        referrerPolicy="no-referrer"
-                        className="h-12 w-12 rounded-full object-cover border-2 border-indigo-200 shrink-0"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 rounded-full bg-slate-200 text-slate-500 font-bold flex items-center justify-center text-sm shrink-0 border border-slate-300">
-                        {userForm.nama ? userForm.nama.charAt(0) : "S"}
-                      </div>
-                    )}
-                    <div className="flex-1 space-y-1">
-                      <label className="cursor-pointer inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-[11px] font-bold px-3 py-1.5 rounded-lg transition shadow-2xs">
-                        <Upload className="h-3.5 w-3.5 text-indigo-600" />
-                        <span>Pilih Foto Berkas</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleStudentPhotoUpload}
-                          className="hidden"
-                        />
-                      </label>
-                      <p className="text-[10px] text-slate-400 leading-tight">Maksimal 2MB (JPG/PNG). Foto ini otomatis menjadi foto resmi akun siswa.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap Siswa</label>
-                  <input
-                    type="text"
-                    required
-                    value={userForm.nama}
-                    onChange={(e) => setUserForm({ ...userForm, nama: e.target.value })}
-                    placeholder="Contoh: Ahmad Dhani"
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">NISN (Nomor Induk Siswa Nasional)</label>
-                  <input
-                    type="text"
-                    required
-                    value={userForm.nisn}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setUserForm({
-                        ...userForm,
-                        nisn: val,
-                        username: val,
-                        password: (!userForm.password || userForm.password === userForm.nisn) ? val : userForm.password
-                      });
-                    }}
-                    placeholder="10 digit nomor NISN"
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Rombel (Kelas)</label>
-                  <select
-                    value={userForm.kelas}
-                    onChange={(e) => setUserForm({ ...userForm, kelas: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white text-slate-700 font-bold"
-                  >
-                    <option value="X-1">X-1 (Fase E)</option>
-                    <option value="XI-1">XI-1 (Fase F)</option>
-                    <option value="XII-1">XII-1 (Fase F)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Alamat Email Siswa</label>
-                  <input
-                    type="email"
-                    required
-                    value={userForm.email}
-                    onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                    placeholder="ahmad@siswa.lmtms.sch.id"
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Username Login (Otomatis = NISN)</label>
-                  <input
-                    type="text"
-                    disabled
-                    value={userForm.nisn || userForm.username}
-                    placeholder="Sesuai NISN Siswa"
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-slate-100 text-slate-600 cursor-not-allowed font-mono font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Kata Sandi Akun (Default = NISN)</label>
-                  <input
-                    type="password"
-                    required={!isEditing}
-                    value={userForm.password}
-                    onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                    placeholder={isEditing ? "Biarkan kosong jika tidak diubah" : "Default sama dengan NISN"}
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition shadow-sm"
-                  >
-                    {isEditing ? "Perbarui Data Siswa" : "Daftarkan Siswa"}
-                  </button>
-                  {isEditing && (
+                
+                {!isEditing && (
+                  <div className="flex bg-slate-100 p-1 rounded-xl text-[11px] font-bold">
                     <button
                       type="button"
-                      onClick={resetUserForm}
-                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl text-xs transition"
+                      onClick={() => setStudentInputMode("single")}
+                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                        studentInputMode === "single" ? "bg-white text-indigo-700 shadow-2xs font-bold" : "text-slate-500 hover:text-slate-800"
+                      }`}
                     >
-                      Batal
+                      Satuan
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setStudentInputMode("bulk")}
+                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                        studentInputMode === "bulk" ? "bg-white text-indigo-700 shadow-2xs font-bold" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      Serentak
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* MODE 1: SINGLE FORM REGISTRATION */}
+              {studentInputMode === "single" ? (
+                <form onSubmit={handleSaveUser} className="space-y-4">
+                  {/* Foto Profil Input & Preview */}
+                  <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                    <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1">
+                      <Camera className="h-3.5 w-3.5 text-indigo-600" />
+                      <span>Foto Profil Siswa (Diunggah Guru)</span>
+                    </label>
+                    <div className="flex items-center gap-3 pt-1">
+                      {userForm.foto ? (
+                        <img
+                          src={userForm.foto}
+                          alt="Foto Siswa"
+                          referrerPolicy="no-referrer"
+                          className="h-12 w-12 rounded-full object-cover border-2 border-indigo-200 shrink-0"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded-full bg-slate-200 text-slate-500 font-bold flex items-center justify-center text-sm shrink-0 border border-slate-300">
+                          {userForm.nama ? userForm.nama.charAt(0) : "S"}
+                        </div>
+                      )}
+                      <div className="flex-1 space-y-1">
+                        <label className="cursor-pointer inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-[11px] font-bold px-3 py-1.5 rounded-lg transition shadow-2xs">
+                          <Upload className="h-3.5 w-3.5 text-indigo-600" />
+                          <span>Pilih Foto Berkas</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleStudentPhotoUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        <p className="text-[10px] text-slate-400 leading-tight">Maksimal 2MB (JPG/PNG). Foto ini otomatis menjadi foto resmi akun siswa.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap Siswa</label>
+                    <input
+                      type="text"
+                      required
+                      value={userForm.nama}
+                      onChange={(e) => setUserForm({ ...userForm, nama: e.target.value })}
+                      placeholder="Contoh: Ahmad Dhani"
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">NISN (Nomor Induk Siswa Nasional)</label>
+                    <input
+                      type="text"
+                      required
+                      value={userForm.nisn}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setUserForm({
+                          ...userForm,
+                          nisn: val,
+                          username: val,
+                          password: (!userForm.password || userForm.password === userForm.nisn) ? val : userForm.password
+                        });
+                      }}
+                      placeholder="10 digit nomor NISN"
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Rombel (Kelas)</label>
+                    <select
+                      value={userForm.kelas}
+                      onChange={(e) => setUserForm({ ...userForm, kelas: e.target.value })}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white text-slate-700 font-bold"
+                    >
+                      <option value="X-1">X-1 (Fase E)</option>
+                      <option value="XI-1">XI-1 (Fase F)</option>
+                      <option value="XII-1">XII-1 (Fase F)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Alamat Email Siswa</label>
+                    <input
+                      type="email"
+                      required
+                      value={userForm.email}
+                      onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                      placeholder="ahmad@siswa.lmtms.sch.id"
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Username Login (Otomatis = NISN)</label>
+                    <input
+                      type="text"
+                      disabled
+                      value={userForm.nisn || userForm.username}
+                      placeholder="Sesuai NISN Siswa"
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-slate-100 text-slate-600 cursor-not-allowed font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Kata Sandi Akun (Default = NISN)</label>
+                    <input
+                      type="password"
+                      required={!isEditing}
+                      value={userForm.password}
+                      onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                      placeholder={isEditing ? "Biarkan kosong jika tidak diubah" : "Default sama dengan NISN"}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-indigo-500 bg-white"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition shadow-sm cursor-pointer"
+                    >
+                      {isEditing ? "Perbarui Data Siswa" : "Daftarkan Siswa"}
+                    </button>
+                    {isEditing && (
+                      <button
+                        type="button"
+                        onClick={resetUserForm}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl text-xs transition cursor-pointer"
+                      >
+                        Batal
+                      </button>
+                    )}
+                  </div>
+                </form>
+              ) : (
+                /* MODE 2: BULK UPLOAD EXCEL / CSV */
+                <div className="space-y-4">
+                  {/* Download Template Banner */}
+                  <div className="bg-gradient-to-r from-indigo-50/90 to-blue-50/80 p-3.5 rounded-xl border border-indigo-100 space-y-2">
+                    <div className="flex items-center gap-1.5 text-indigo-950 font-bold text-xs">
+                      <Sparkles className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                      <span>Unduh Sample Template Format</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Gunakan berkas contoh di bawah ini untuk mengisi data NISN, Nama, Kelas, dan Email secara massal sebelum diunggah:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadTemplate("xlsx")}
+                        className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-2.5 rounded-lg text-[11px] transition shadow-2xs cursor-pointer"
+                        title="Unduh Format Berkas Excel (.xlsx)"
+                      >
+                        <FileSpreadsheet className="h-3.5 w-3.5" />
+                        <span>Template .XLSX</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadTemplate("csv")}
+                        className="inline-flex items-center justify-center gap-1.5 bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-2.5 rounded-lg text-[11px] transition shadow-2xs cursor-pointer"
+                        title="Unduh Format Berkas CSV (.csv)"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        <span>Template .CSV</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* File Upload Box */}
+                  <div className="border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/20 hover:bg-indigo-50/50 rounded-xl p-4 text-center transition cursor-pointer relative">
+                    <input
+                      type="file"
+                      accept=".csv, .xls, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                      onChange={handleBulkFileChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                    <UploadCloud className="h-8 w-8 text-indigo-600 mx-auto mb-1.5" />
+                    <p className="text-xs font-bold text-slate-800">
+                      {bulkFileName ? bulkFileName : "Pilih / Seret Berkas Spreadsheet"}
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      Format didukung: .XLSX, .XLS, atau .CSV
+                    </p>
+                  </div>
+
+                  {/* Parsed Students Preview */}
+                  {parsedStudents.length > 0 && (
+                    <div className="space-y-3 pt-1">
+                      <div className="flex items-center justify-between text-xs font-bold border-b border-slate-100 pb-2">
+                        <span className="text-slate-800">Pratinjau Impor ({parsedStudents.length} siswa)</span>
+                        <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[10px]">
+                          {parsedStudents.filter((s) => s.isValid).length} Siap
+                        </span>
+                      </div>
+
+                      <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/40">
+                        {parsedStudents.map((s, idx) => (
+                          <div key={idx} className="p-2.5 text-[11px] flex justify-between items-center gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-slate-800 truncate">{s.nama || "(Nama Kosong)"}</p>
+                              <p className="text-[10px] text-slate-500 font-mono">
+                                NISN: {s.nisn || "-"} • Kelas: {s.kelas}
+                              </p>
+                            </div>
+                            {s.isValid ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full shrink-0">
+                                <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Siap
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full shrink-0" title={s.errorReason}>
+                                <XCircle className="h-3 w-3 text-amber-600" /> {s.errorReason}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          type="button"
+                          disabled={isSubmittingBulk || parsedStudents.filter((s) => s.isValid).length === 0}
+                          onClick={handleProcessBulkImport}
+                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold py-2 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          {isSubmittingBulk ? (
+                            <>
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                              <span>Memproses Impor...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FileUp className="h-3.5 w-3.5" />
+                              <span>Proses Impor ({parsedStudents.filter((s) => s.isValid).length} Siswa)</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setParsedStudents([]); setBulkFileName(""); }}
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl text-xs transition cursor-pointer"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
-              </form>
+              )}
             </div>
           ) : (
             <div className="lg:col-span-1 bg-slate-50 p-5 border border-slate-200 rounded-2xl text-slate-500 text-xs h-fit leading-relaxed">

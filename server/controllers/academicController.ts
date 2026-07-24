@@ -66,6 +66,87 @@ export const createUser = (req: Request, res: Response) => {
   res.json({ success: true, user: newUser });
 };
 
+export const createBulkUsers = (req: Request, res: Response) => {
+  const { students } = req.body;
+  if (!Array.isArray(students) || students.length === 0) {
+    return res.status(400).json({ success: false, message: "Data siswa untuk diimpor tidak boleh kosong." });
+  }
+
+  const db = readDB();
+  let createdCount = 0;
+  let skippedCount = 0;
+  const errors: string[] = [];
+  const newUsersList: any[] = [];
+
+  students.forEach((s: any, idx: number) => {
+    const rowNum = idx + 1;
+    const nama = (s.nama || s["Nama Lengkap"] || s.Name || "").toString().trim();
+    const nisn = (s.nisn || s.NISN || s["Nomor NISN"] || "").toString().trim();
+    const kelas = (s.kelas || s.Kelas || s.Rombel || "X-1").toString().trim();
+    const email = (s.email || s.Email || s["Alamat Email"] || `${nisn || `siswa${Date.now()}_${idx}`}@siswa.lmtms.sch.id`).toString().trim().toLowerCase();
+    const password = s.password || s.Password || s["Password Default"] || s["Kata Sandi"] || nisn;
+
+    if (!nama) {
+      errors.push(`Baris ${rowNum}: Nama siswa tidak boleh kosong.`);
+      skippedCount++;
+      return;
+    }
+    if (!nisn) {
+      errors.push(`Baris ${rowNum} (${nama}): NISN tidak boleh kosong.`);
+      skippedCount++;
+      return;
+    }
+
+    // Check duplicate in existing DB or current batch
+    const existsInDb = db.users.some(
+      (u: any) => (u.username && u.username.toLowerCase() === nisn.toLowerCase()) || 
+                  (u.nisn && u.nisn === nisn) || 
+                  (u.email && u.email.toLowerCase() === email)
+    );
+    const existsInNew = newUsersList.some(
+      (u: any) => u.username.toLowerCase() === nisn.toLowerCase() || u.email.toLowerCase() === email
+    );
+
+    if (existsInDb || existsInNew) {
+      errors.push(`Baris ${rowNum} (${nama}): NISN (${nisn}) atau Email (${email}) sudah terdaftar di sistem.`);
+      skippedCount++;
+      return;
+    }
+
+    const newUser = {
+      id: `usr-${Date.now()}-${idx}-${Math.floor(Math.random() * 1000)}`,
+      username: nisn,
+      nama,
+      email,
+      role: "SISWA",
+      nisn,
+      kelas,
+      password: String(password).trim() || nisn,
+      foto: "",
+      mfaEnabled: false,
+      mfaSecret: Math.random().toString(36).substring(2, 12).toUpperCase(),
+    };
+
+    newUsersList.push(newUser);
+    createdCount++;
+  });
+
+  if (newUsersList.length > 0) {
+    db.users.push(...newUsersList);
+    writeDB(db);
+    const actorRole = (req.headers["x-user-role"] as string) || "GURU";
+    addActivityLog("usr-guru", "Pengajar / Administrator LMTMS", actorRole, "BULK_CREATE_STUDENTS", `Mengunggah ${createdCount} data siswa secara serentak`, req.ip);
+  }
+
+  return res.json({
+    success: true,
+    message: `Berhasil mengimpor ${createdCount} data siswa baru.${skippedCount > 0 ? ` (${skippedCount} baris dilewati karena duplikat/data kurang lengkap)` : ""}`,
+    createdCount,
+    skippedCount,
+    errors
+  });
+};
+
 export const updateUser = (req: Request, res: Response) => {
   const { id } = req.params;
   const { nama, email, nip, nisn, kelas, password, foto } = req.body;
