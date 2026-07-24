@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import * as XLSX from "xlsx";
 import {
   GraduationCap,
   UserCheck,
@@ -112,6 +113,37 @@ export const AnalitikaView: React.FC<AnalitikaViewProps> = ({ user, analitika, o
   const [importText, setImportText] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<{ success: boolean; message: string } | null>(null);
+  const [showAnalitikaPreviewModal, setShowAnalitikaPreviewModal] = useState(false);
+  const [analitikaFileName, setAnalitikaFileName] = useState("");
+  const [parsedRows, setParsedRows] = useState<any[]>([]);
+
+  const handleSpreadsheetFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAnalitikaFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonRows: any[] = XLSX.utils.sheet_to_json(worksheet);
+        const csvStr = XLSX.utils.sheet_to_csv(worksheet);
+
+        setImportText(csvStr);
+        setParsedRows(jsonRows);
+        setShowAnalitikaPreviewModal(true);
+        setImportStatus(null);
+      } catch (err) {
+        console.error("Gagal membaca file spreadsheet:", err);
+        setImportStatus({ success: false, message: "Gagal membaca berkas. Pastikan format file .xlsx, .xls, atau .csv." });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = "";
+  };
 
   // AI Analytics Advisor States
   const [aiReport, setAiReport] = useState<string>("");
@@ -1341,11 +1373,31 @@ Susunlah dokumen Analisis Refleksi Guru Terpadu menggunakan rumus 8-3-3-4 dengan
 
               {/* Data entry text panel */}
               <div className="lg:col-span-8 flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-indigo-50/80 border border-indigo-200 p-3.5 rounded-xl gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <FileSpreadsheet className="h-5 w-5 text-indigo-600 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Unggah Berkas Spreadsheet (.csv, .xls, .xlsx)</p>
+                      <p className="text-[10px] text-slate-500">Pilih file spreadsheet dari komputer untuk pratinjau tabel otomatis</p>
+                    </div>
+                  </div>
+                  <label className="cursor-pointer inline-flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-2xs shrink-0">
+                    <Upload className="h-3.5 w-3.5" />
+                    <span>Pilih Berkas</span>
+                    <input
+                      type="file"
+                      accept=".csv, .xls, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                      onChange={handleSpreadsheetFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
                 <textarea
-                  rows={10}
+                  rows={8}
                   value={importText}
                   onChange={(e) => setImportText(e.target.value)}
-                  placeholder={`Tempel baris teks CSV di sini...\n\nContoh:\nnama,kelas,nisn,email\n"Ahmad","X-1","001","ahmad@email.com"`}
+                  placeholder={`Tempel baris teks CSV di sini atau gunakan tombol 'Pilih Berkas' di atas...\n\nContoh:\nnama,kelas,nisn,email\n"Ahmad","X-1","001","ahmad@email.com"`}
                   className="w-full p-4 font-mono text-xs text-slate-700 border border-slate-200 rounded-2xl outline-0 bg-slate-50/20 focus:ring-1 focus:ring-indigo-500 focus:bg-white transition"
                 />
 
@@ -1942,6 +1994,116 @@ Susunlah dokumen Analisis Refleksi Guru Terpadu menggunakan rumus 8-3-3-4 dengan
               >
                 Tutup
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pratinjau Spreadsheet Data Analitika / Impor */}
+      {showAnalitikaPreviewModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col my-auto max-h-[90vh]">
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-indigo-500/20 border border-indigo-400/30 rounded-xl text-indigo-300">
+                  <FileSpreadsheet className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-base sm:text-lg text-white">
+                    Pratinjau Data Spreadsheet ({importType.toUpperCase()})
+                  </h3>
+                  <p className="text-xs text-indigo-200/80 mt-0.5">
+                    {analitikaFileName} • {parsedRows.length} Baris Terbaca
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAnalitikaPreviewModal(false)}
+                className="p-1.5 rounded-xl hover:bg-white/10 text-indigo-200 hover:text-white transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex items-center justify-between">
+              <span>Periksa data tabel di bawah ini sebelum memproses impor ke server.</span>
+              <span className="font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200">
+                Tipe Impor: {importType === "siswa" ? "Daftar Siswa" : importType === "nilai" ? "Nilai Evaluasi" : "Presensi Kelas"}
+              </span>
+            </div>
+
+            <div className="flex-1 overflow-auto max-h-[50vh] p-4 bg-white">
+              {parsedRows.length === 0 ? (
+                <p className="text-center text-xs text-slate-400 py-8">Tidak ada baris data ditemukan dalam spreadsheet.</p>
+              ) : (
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 sticky top-0">
+                      <th className="p-2 w-10 text-center">No</th>
+                      {Object.keys(parsedRows[0] || {}).map((colKey, i) => (
+                        <th key={i} className="p-2 border-l border-slate-200">{colKey}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {parsedRows.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 transition">
+                        <td className="p-2 text-center text-slate-400 font-mono text-[11px]">{idx + 1}</td>
+                        {Object.keys(parsedRows[0] || {}).map((colKey, i) => (
+                          <td key={i} className="p-2 border-l border-slate-100 text-slate-800 font-mono text-[11px]">
+                            {String(row[colKey] ?? "")}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+              <label className="cursor-pointer inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs">
+                <Upload className="h-3.5 w-3.5 text-indigo-600" />
+                <span>Pilih Berkas Lain</span>
+                <input
+                  type="file"
+                  accept=".csv, .xls, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                  onChange={handleSpreadsheetFileUpload}
+                  className="hidden"
+                />
+              </label>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAnalitikaPreviewModal(false)}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={isImporting}
+                  onClick={async () => {
+                    setShowAnalitikaPreviewModal(false);
+                    await handleImportData();
+                  }}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-xl text-xs transition shadow-md shadow-indigo-200 flex items-center gap-1.5 cursor-pointer"
+                >
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Mengimpor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>Konfirmasi & Impor {parsedRows.length} Data</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

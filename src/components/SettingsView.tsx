@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Shield, KeyRound, Smartphone, Save, AlertCircle, CheckCircle, Fingerprint, Palette, Sun, Moon, Wifi, Lock, User as UserIcon } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Shield, KeyRound, Smartphone, Save, AlertCircle, CheckCircle, Fingerprint, Palette, Sun, Moon, Wifi, Lock, User as UserIcon, Camera, Upload, Trash2 } from "lucide-react";
 import { User } from "../types";
 
 interface SettingsViewProps {
@@ -32,9 +32,46 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   // Profile states
   const [nama, setNama] = useState(user.nama);
   const [email, setEmail] = useState(user.email);
+  const [foto, setFoto] = useState(user.foto || "");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [profileError, setProfileError] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => {
+    setNama(user.nama);
+    setEmail(user.email);
+    setFoto(user.foto || "");
+  }, [user.id, user.nama, user.email, user.foto]);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfileSuccess("");
+    setProfileError("");
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setProfileError("Ukuran berkas foto terlalu besar. Maksimum 2MB.");
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        setProfileError("Format berkas harus berupa gambar (JPG, PNG, atau WebP).");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const resultStr = event.target.result as string;
+          setFoto(resultStr);
+          setProfileSuccess("Foto profil baru telah dipilih. Klik 'Simpan Perubahan' untuk memperbarui.");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setFoto("");
+    setProfileSuccess("Foto profil dihapus. Klik 'Simpan Perubahan' untuk memperbarui.");
+  };
 
   // Password states
   const [currentPassword, setCurrentPassword] = useState("");
@@ -64,11 +101,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           "Content-Type": "application/json",
           "x-user-role": user.role
         },
-        body: JSON.stringify({ userId: user.id, nama, email })
+        body: JSON.stringify({ userId: user.id, nama, email, foto })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setProfileSuccess("Profil berhasil diperbarui!");
+        setProfileSuccess("Profil & foto berhasil diperbarui!");
         onUpdateUser(data.user);
       } else {
         setProfileError(data.message || "Gagal memperbarui profil.");
@@ -212,9 +249,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
             
             <div className="relative inline-block mb-3">
-              {user.foto ? (
+              {foto ? (
                 <img
-                  src={user.foto}
+                  src={foto}
                   alt={user.nama}
                   referrerPolicy="no-referrer"
                   className="h-20 w-20 rounded-full object-cover border-4 border-blue-100 shadow-sm mx-auto"
@@ -224,8 +261,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   {user.nama.charAt(0)}
                 </div>
               )}
-              {user.role === "SISWA" && (
-                <div className="absolute bottom-0 right-0 bg-amber-500 text-white p-1 rounded-full shadow-sm" title="Foto profil dikunci untuk siswa">
+              {user.role !== "SISWA" ? (
+                <label className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded-full shadow-md cursor-pointer transition transform hover:scale-110" title="Unggah Foto Profil Baru">
+                  <Camera className="h-3.5 w-3.5" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
+                </label>
+              ) : (
+                <div className="absolute bottom-0 right-0 bg-amber-500 text-white p-1.5 rounded-full shadow-sm" title="Foto profil dikunci untuk siswa">
                   <Lock className="h-3.5 w-3.5" />
                 </div>
               )}
@@ -313,6 +360,61 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             <form onSubmit={handleUpdateProfile} className="space-y-4">
+              {/* Seksi Unggah Foto Profil Guru / Staf */}
+              {user.role !== "SISWA" && (
+                <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Camera className="h-4 w-4 text-blue-600" />
+                      <span>Foto Profil Saya</span>
+                    </label>
+                    {foto && (
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        <span>Hapus Foto</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="shrink-0 relative">
+                      {foto ? (
+                        <img
+                          src={foto}
+                          alt="Pratinjau Foto Profil"
+                          referrerPolicy="no-referrer"
+                          className="h-16 w-16 rounded-full object-cover border-2 border-blue-200 shadow-2xs"
+                        />
+                      ) : (
+                        <div className="h-16 w-16 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xl border border-blue-200">
+                          {nama ? nama.charAt(0) : "G"}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5 flex-1">
+                      <label className="cursor-pointer inline-flex items-center gap-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-2xs">
+                        <Upload className="h-4 w-4 text-blue-600" />
+                        <span>Unggah / Pilih Foto Baru</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoChange}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="text-[11px] text-slate-500 leading-tight">
+                        Format JPG, PNG, atau WebP (maksimal 2MB). Foto profil ini akan otomatis tampil di header, sidebar, dan identitas resmi portal LMTMS.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <div className="flex items-center justify-between mb-1">

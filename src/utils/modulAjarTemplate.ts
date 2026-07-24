@@ -181,10 +181,12 @@ g. Source Code (Kode Sumber): kumpulan instruksi program yang ditulis dalam baha
 h. Pembelajaran Mendalam: pendekatan belajar yang berlandaskan tiga prinsip berkesadaran, bermakna, dan menggembirakan, dengan pengalaman belajar memahami-mengaplikasi-merefleksi.
 
 Lampiran 3: Daftar Pustaka
-a. Kementerian Pendidikan Dasar dan Menengah. Naskah Akademik Pembelajaran Mendalam: Menuju Pendidikan Bermutu untuk Semua. Jakarta: Pusat Kurikulum dan Pembelajaran, 2025.
-b. Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi. Buku Panduan Guru Informatika untuk SMA/SMK Kelas XII. Jakarta: Pusat Perbukuan.
-c. Badan Standar, Kurikulum, dan Asesmen Pendidikan (BSKAP). Capaian Pembelajaran Mata Pelajaran Informatika Fase F, Keputusan No. 032/H/KR/2024.
-d. Sumber referensi lain yang relevan dan mutakhir sesuai kebijakan satuan pendidikan.
+a. Kementerian Pendidikan Dasar dan Menengah. Permendikdasmen Nomor 10 Tahun 2025 tentang Standar Kompetensi Lulusan (SKL). Jakarta, 2025.
+b. Kementerian Pendidikan Dasar dan Menengah. Permendikdasmen Nomor 12 Tahun 2025 tentang Standar Isi. Jakarta, 2025.
+c. Kementerian Pendidikan Dasar dan Menengah. Permendikdasmen Nomor 13 Tahun 2025 tentang Perubahan Kurikulum Pendidikan Anak Usia Dini, Dasar, dan Menengah. Jakarta, 2025.
+d. Badan Standar, Kurikulum, dan Asesmen Pendidikan (BSKAP) Kementerian Pendidikan Dasar dan Menengah. Capaian Pembelajaran Mata Pelajaran Informatika, Keputusan Kepala BSKAP Kemendikdasmen No. 046/H/KR/2025.
+e. Kementerian Pendidikan Dasar dan Menengah. Naskah Akademik Pembelajaran Mendalam: Menuju Pendidikan Bermutu untuk Semua. Jakarta: Pusat Kurikulum dan Pembelajaran, 2025.
+f. Buku Panduan Guru & Buku Siswa Informatika SMA/SMK. Jakarta: Pusat Perbukuan.
 
 Lampiran 4: DAFTAR PERIKSA (SELF-ASSESSMENT) CAPAIAN BELAJAR PESERTA DIDIK
 Topik: ${topik}
@@ -245,7 +247,7 @@ Pendekatan : Pembelajaran Mendalam (Deep Learning): Berkesadaran, Bermakna, Meng
 Tahun Penyusunan : 2026
 
 1. Capaian Pembelajaran
-Pada akhir fase F, peserta didik mampu mengumpulkan, menstrukturkan, mengolah, dan menganalisis data bervolume besar secara efisien dan sistematis dengan memanfaatkan perkakas serta pustaka (library) standar pengolahan data, untuk menginterpretasi, menyimpulkan, memprediksi, dan menyajikan hasil analisis dalam berbagai bentuk representasi (teks, grafik, dan visualisasi lain) guna mendukung pengambilan keputusan pada persoalan nyata. Capaian ini merupakan penjabaran elemen Analisis Data yang pada Fase F terintegrasi dalam elemen Praktik Lintas Bidang, mengacu pada Capaian Pembelajaran Mata Pelajaran Informatika Fase F (SK BSKAP No. 032/H/KR/2024).
+Pada akhir fase F, peserta didik mampu mengumpulkan, menstrukturkan, mengolah, dan menganalisis data bervolume besar secara efisien dan sistematis dengan memanfaatkan perkakas serta pustaka (library) standar pengolahan data, untuk menginterpretasi, menyimpulkan, memprediksi, dan menyajikan hasil analisis dalam berbagai bentuk representasi (teks, grafik, dan visualisasi lain) guna mendukung pengambilan keputusan pada persoalan nyata. Capaian ini merupakan penjabaran elemen Analisis Data yang pada Fase F terintegrasi dalam elemen Praktik Lintas Bidang, mengacu pada Capaian Pembelajaran Mata Pelajaran Informatika (Keputusan Kepala BSKAP Kemendikdasmen No. 046/H/KR/2025).
 
 2. Tujuan Pembelajaran
 1. Peserta didik mampu mengumpulkan dan menstrukturkan data bervolume besar dari suatu dataset melalui eksplorasi perkakas pengolah data dengan sistematis.

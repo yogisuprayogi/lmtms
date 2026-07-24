@@ -115,6 +115,13 @@ export const generatePerangkat = async (req: Request, res: Response) => {
   Sasaran: SMA Kelas ${kelas || "X"} (Fase ${kelas === "X" ? "E" : "F"}).
   Format output HARUS berupa Markdown murni yang lengkap, profesional, terstruktur rapi (gunakan H1, H2, H3, poin-poin, tabel jika relevan, dan blok kode untuk pemrograman), tanpa komentar atau metadata tambahan di luar Markdown.
   
+  ACUAN REGULASI RESMI KURIKULUM WAJIB (KERANGKA REGULASI TERBARU):
+  Seluruh penyusunan Capaian Pembelajaran (CP), Alur Tujuan Pembelajaran (ATP), Modul Ajar, RPP, dan perangkat pembelajaran WAJIB mengacu pada Regulasi Resmi Pemerintah Kementerian Pendidikan Dasar dan Menengah RI terbaru:
+  1. Permendikdasmen Nomor 10 Tahun 2025 tentang Standar Kompetensi Lulusan (SKL).
+  2. Permendikdasmen Nomor 12 Tahun 2025 tentang Standar Isi.
+  3. Permendikdasmen Nomor 13 Tahun 2025 tentang Perubahan Kurikulum Pendidikan Anak Usia Dini, Pendidikan Dasar, dan Pendidikan Menengah.
+  4. Keputusan Kepala BSKAP Kemendikdasmen Nomor 046/H/KR/2025 tentang Capaian Pembelajaran pada PAUD, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah.
+  
   PENTING: Sesuaikan perangkat pembelajaran ini dengan Kerangka Pembelajaran Mendalam (Deep Learning) yang berfokus pada pengembangan holistik siswa melalui 4 pilar utama:
   - Praktik pedagogis interaktif (strategi mengajar aktif, interaktif, kolaboratif, eksploratif).
   - Kemitraan belajar (kolaborasi erat guru, siswa, orang tua, dan masyarakat/komunitas).
@@ -161,7 +168,7 @@ Pendekatan : Pembelajaran Mendalam (Deep Learning): Berkesadaran, Bermakna, Meng
 Tahun Penyusunan : 2026
 
 1. Capaian Pembelajaran
-[Isi CP resmi dari BSKAP sesuai elemen]
+[Isi CP resmi mengacu pada Keputusan Kepala BSKAP Kemendikdasmen No. 046/H/KR/2025, Permendikdasmen No. 10/2025 (SKL), No. 12/2025 (Standar Isi), dan No. 13/2025 (Kurikulum) sesuai elemen]
 
 2. Tujuan Pembelajaran
 1. [Tujuan 1]

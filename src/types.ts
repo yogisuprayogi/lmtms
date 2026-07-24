@@ -30,47 +30,27 @@ export interface ElemenInformatika {
   deskripsi: string;
 }
 
-// Elemen Kurikulum Merdeka Informatika SMA
+// Elemen Resmi Kurikulum Merdeka Informatika (SK BSKAP Kemendikdasmen No. 046/H/KR/2025)
 export const ELEMEN_INFORMATIKA: ElemenInformatika[] = [
   {
     kode: 'BK',
     nama: 'Berpikir Komputasional',
-    deskripsi: 'Menyelesaikan persoalan secara logis, kritis, dan kreatif melalui dekomposisi, pengenalan pola, abstraksi, dan rancangan algoritma.'
+    deskripsi: 'Kemampuan untuk menyelesaikan masalah secara sistematis dan berjenjang melalui pemodelan dan melalui simulasi untuk menghasilkan solusi efektif, efisien, dan optimal yang dapat dijalankan oleh manusia atau mesin meliputi penalaran logis, kritis, dan kreatif berdasarkan data, baik secara mandiri maupun berkolaborasi.'
   },
   {
-    kode: 'TIK',
-    nama: 'Teknologi Informasi dan Komunikasi',
-    deskripsi: 'Mengintegrasikan konten aplikasi, mengelola file secara terstruktur, serta memanfaatkan fitur lanjut aplikasi perkantoran.'
-  },
-  {
-    kode: 'SK',
-    nama: 'Sistem Komputer',
-    deskripsi: 'Memahami perangkat keras, perangkat lunak, interaksi antarperangkat, serta siklus pengolahan data pada komputer.'
-  },
-  {
-    kode: 'JKI',
-    nama: 'Jaringan Komputer dan Internet',
-    deskripsi: 'Memahami konektivitas internet, konfigurasi jaringan lokal, enkripsi data, serta keamanan komunikasi data.'
+    kode: 'LD',
+    nama: 'Literasi Digital',
+    deskripsi: 'Kecakapan bermedia digital, berperilaku etis dan berbudaya di dunia digital, berkemampuan menjaga keamanan diri dan lingkungan, serta memiliki kenyamanan dan keseimbangan hidup di dunia nyata sekaligus dunia maya.'
   },
   {
     kode: 'AD',
     nama: 'Analisis Data',
-    deskripsi: 'Mengoleksi, mengolah, memvisualisasikan, dan menginterpretasikan data terstruktur untuk mengambil keputusan.'
+    deskripsi: 'Kemampuan untuk menstrukturkan, menginput, memproses (antara lain menganalisis, mengambil kesimpulan, membuat keputusan, dan memprediksi), dan menyajikan data dalam berbagai bentuk representasi, seperti teks, audio, gambar, dan video.'
   },
   {
     kode: 'AP',
     nama: 'Algoritma dan Pemrograman',
-    deskripsi: 'Menulis baris kode terstruktur menggunakan bahasa pemrograman (Python/C++), menerapkan fungsi, percabangan, perulangan, dan analisis kompleksitas.'
-  },
-  {
-    kode: 'DSI',
-    nama: 'Dampak Sosial Informatika',
-    deskripsi: 'Menganalisis sejarah komputer, hak kekayaan intelektual (HKI), lisensi produk, aspek hukum siber, serta studi etika digital.'
-  },
-  {
-    kode: 'PLB',
-    nama: 'Praktik Lintas Bidang',
-    deskripsi: 'Berkolaborasi merancang dan mengimplementasikan proyek rekayasa perangkat lunak atau solusi komputasional terpadu.'
+    deskripsi: 'Mengembangkan solusi dari berbagai persoalan dengan membaca bermakna dan menulis teks algoritmik terstruktur (logis, sistematis, bertahap, konvergen, dan linier) menjadi kumpulan instruksi yang dapat dikerjakan orang lain atau komputer, berdasarkan paradigma pemrograman prosedural dengan ukuran dan kompleksitas program yang menaik secara bertahap dan berjenjang, dapat dikerjakan secara mandiri atau berkolaborasi dengan yang lain.'
   }
 ];
 

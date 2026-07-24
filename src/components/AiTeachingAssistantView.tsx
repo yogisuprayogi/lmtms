@@ -507,9 +507,15 @@ export const AiTeachingAssistantView: React.FC<AiTeachingAssistantViewProps> = (
           <Bot className="h-44 w-44 text-blue-400" />
         </div>
         <div className="relative z-10 space-y-2">
-          <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-xs font-semibold">
-            <Bot className="h-3.5 w-3.5" />
-            <span>AI Studio Smart Agent</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-xs font-semibold">
+              <Bot className="h-3.5 w-3.5" />
+              <span>AI Studio Smart Agent</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 bg-rose-500/20 text-rose-200 border border-rose-500/30 px-3 py-1 rounded-full text-xs font-semibold">
+              <Sparkles className="h-3.5 w-3.5 text-rose-300" />
+              <span>Acuan Regulasi 2025: SK BSKAP No. 046 & Permendikdasmen No. 10, 12, 13</span>
+            </div>
           </div>
           <h1 className="text-2xl md:text-3xl font-display font-bold text-white tracking-tight">
             AI Teaching Assistant

@@ -29,7 +29,10 @@ import {
   CheckCircle2,
   XCircle,
   Sparkles,
-  FileUp
+  FileUp,
+  Eye,
+  Filter,
+  Info
 } from "lucide-react";
 import { User, TahunPelajaran } from "../types";
 import { InteractiveCalendar } from "./InteractiveCalendar";
@@ -128,6 +131,9 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
   }>>([]);
   const [bulkFileName, setBulkFileName] = useState("");
   const [isSubmittingBulk, setIsSubmittingBulk] = useState(false);
+  const [showImportPreviewModal, setShowImportPreviewModal] = useState(false);
+  const [previewSearchTerm, setPreviewSearchTerm] = useState("");
+  const [previewFilterStatus, setPreviewFilterStatus] = useState<"all" | "valid" | "invalid">("all");
 
   // Reset Password Modal State
   const [selectedStudentForReset, setSelectedStudentForReset] = useState<User | null>(null);
@@ -514,7 +520,10 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
         });
 
         setParsedStudents(processed);
-        triggerNotification("success", `Tersaring ${processed.length} baris data dari berkas ${file.name}.`);
+        setShowImportPreviewModal(true);
+        setPreviewSearchTerm("");
+        setPreviewFilterStatus("all");
+        triggerNotification("success", `Pratinjau data dibuat dari berkas ${file.name} (${processed.length} baris).`);
       } catch (err) {
         console.error("Gagal membaca file spreadsheet:", err);
         triggerNotification("error", "Gagal membaca berkas. Pastikan format file .xlsx, .xls, atau .csv.");
@@ -522,6 +531,8 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
     };
 
     reader.readAsArrayBuffer(file);
+    // Reset file value to allow re-uploading the same file if needed
+    e.target.value = "";
   };
 
   const handleProcessBulkImport = async () => {
@@ -547,6 +558,7 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
         triggerNotification("success", data.message || `Berhasil mengimpor ${validStudents.length} data siswa!`);
         setParsedStudents([]);
         setBulkFileName("");
+        setShowImportPreviewModal(false);
         loadAllData();
       } else {
         triggerNotification("error", data.message || "Gagal mengimpor data siswa.");
@@ -1144,19 +1156,19 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                   <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
                     <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1">
                       <Camera className="h-3.5 w-3.5 text-indigo-600" />
-                      <span>Foto Profil Siswa (Diunggah Guru)</span>
+                      <span>Foto Profil {activeSubTab === "guru" ? "Guru" : "Siswa"}</span>
                     </label>
                     <div className="flex items-center gap-3 pt-1">
                       {userForm.foto ? (
                         <img
                           src={userForm.foto}
-                          alt="Foto Siswa"
+                          alt="Foto Profil"
                           referrerPolicy="no-referrer"
                           className="h-12 w-12 rounded-full object-cover border-2 border-indigo-200 shrink-0"
                         />
                       ) : (
                         <div className="h-12 w-12 rounded-full bg-slate-200 text-slate-500 font-bold flex items-center justify-center text-sm shrink-0 border border-slate-300">
-                          {userForm.nama ? userForm.nama.charAt(0) : "S"}
+                          {userForm.nama ? userForm.nama.charAt(0) : (activeSubTab === "guru" ? "G" : "S")}
                         </div>
                       )}
                       <div className="flex-1 space-y-1">
@@ -1170,7 +1182,7 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                             className="hidden"
                           />
                         </label>
-                        <p className="text-[10px] text-slate-400 leading-tight">Maksimal 2MB (JPG/PNG). Foto ini otomatis menjadi foto resmi akun siswa.</p>
+                        <p className="text-[10px] text-slate-400 leading-tight">Maksimal 2MB (JPG/PNG). Foto ini otomatis menjadi foto resmi akun {activeSubTab === "guru" ? "guru" : "siswa"}.</p>
                       </div>
                     </div>
                   </div>
@@ -1328,7 +1340,16 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                         </span>
                       </div>
 
-                      <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/40">
+                      <button
+                        type="button"
+                        onClick={() => setShowImportPreviewModal(true)}
+                        className="w-full bg-slate-900 hover:bg-indigo-900 text-white font-bold py-2 px-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Eye className="h-4 w-4 text-indigo-300" />
+                        <span>Buka Modal Pratinjau Data Lengkap</span>
+                      </button>
+
+                      <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/40">
                         {parsedStudents.map((s, idx) => (
                           <div key={idx} className="p-2.5 text-[11px] flex justify-between items-center gap-2">
                             <div className="min-w-0 flex-1">
@@ -2150,6 +2171,270 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pratinjau Data Impor Spreadsheet (.csv, .xls, .xlsx) */}
+      {showImportPreviewModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl max-w-5xl w-full overflow-hidden flex flex-col my-auto max-h-[90vh]">
+            {/* Header Modal */}
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white flex items-center justify-between border-b border-indigo-800/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-indigo-500/20 border border-indigo-400/30 rounded-xl text-indigo-300">
+                  <FileSpreadsheet className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display font-bold text-base sm:text-lg text-white">
+                      Pratinjau Data Impor Spreadsheet
+                    </h3>
+                    <span className="bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 text-[10px] font-mono px-2 py-0.5 rounded-full uppercase">
+                      .CSV / .XLS / .XLSX
+                    </span>
+                  </div>
+                  <p className="text-xs text-indigo-200/80 mt-0.5">
+                    Verifikasi kelayakan format data siswa sebelum disimpan ke basis data LMTMS
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowImportPreviewModal(false)}
+                className="p-1.5 rounded-xl hover:bg-white/10 text-indigo-200 hover:text-white transition"
+                title="Tutup Pratinjau"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Info bar & controls */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+              {/* File Info & Stats */}
+              <div className="flex items-center flex-wrap gap-2">
+                <span className="font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-indigo-600" />
+                  <span>{bulkFileName || "Berkas Spreadsheet"}</span>
+                </span>
+                <span className="bg-slate-200/70 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-semibold px-2.5 py-1 rounded-lg">
+                  Total: {parsedStudents.length} Baris
+                </span>
+                <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>{parsedStudents.filter(s => s.isValid).length} Siap Diimpor</span>
+                </span>
+                {parsedStudents.filter(s => !s.isValid).length > 0 && (
+                  <span className="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                    <XCircle className="h-3.5 w-3.5 text-amber-600" />
+                    <span>{parsedStudents.filter(s => !s.isValid).length} Bermasalah (Dilewati)</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Filter Tabs & Search */}
+              <div className="flex items-center gap-2">
+                {/* Search Box */}
+                <div className="relative flex-1 md:w-56">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={previewSearchTerm}
+                    onChange={(e) => setPreviewSearchTerm(e.target.value)}
+                    placeholder="Cari nama, NISN, kelas..."
+                    className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-0"
+                  />
+                  {previewSearchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewSearchTerm("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter Selector */}
+                <div className="inline-flex rounded-lg bg-slate-200/70 dark:bg-slate-700 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewFilterStatus("all")}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+                      previewFilterStatus === "all"
+                        ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-2xs"
+                        : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+                    }`}
+                  >
+                    Semua ({parsedStudents.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewFilterStatus("valid")}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+                      previewFilterStatus === "valid"
+                        ? "bg-emerald-600 text-white shadow-2xs"
+                        : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+                    }`}
+                  >
+                    Valid ({parsedStudents.filter(s => s.isValid).length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewFilterStatus("invalid")}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+                      previewFilterStatus === "invalid"
+                        ? "bg-amber-600 text-white shadow-2xs"
+                        : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+                    }`}
+                  >
+                    Error ({parsedStudents.filter(s => !s.isValid).length})
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Warning / Validation Notice */}
+            {parsedStudents.filter(s => !s.isValid).length > 0 && (
+              <div className="bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200/80 dark:border-amber-800/50 px-4 py-2.5 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-200">
+                <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="leading-tight">
+                  <span className="font-bold">Perhatian Format Data: </span>
+                  Baris berstatus bermasalah/error (misalnya NISN/Email duplikat atau kolom nama/NISN kosong) akan dilewati secara otomatis saat proses impor agar tidak menimbulkan eror pada basis data. Hanya <b>{parsedStudents.filter(s => s.isValid).length} data valid</b> yang akan disimpan.
+                </div>
+              </div>
+            )}
+
+            {/* Table Area */}
+            <div className="flex-1 overflow-auto max-h-[50vh] p-4 bg-white dark:bg-slate-800">
+              {(() => {
+                const filtered = parsedStudents.filter((s) => {
+                  const matchSearch =
+                    s.nama.toLowerCase().includes(previewSearchTerm.toLowerCase()) ||
+                    s.nisn.toLowerCase().includes(previewSearchTerm.toLowerCase()) ||
+                    s.kelas.toLowerCase().includes(previewSearchTerm.toLowerCase()) ||
+                    s.email.toLowerCase().includes(previewSearchTerm.toLowerCase());
+                  if (!matchSearch) return false;
+                  if (previewFilterStatus === "valid") return s.isValid;
+                  if (previewFilterStatus === "invalid") return !s.isValid;
+                  return true;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="p-8 text-center text-slate-400 space-y-2">
+                      <FileSpreadsheet className="h-10 w-10 mx-auto text-slate-300 dark:text-slate-600" />
+                      <p className="text-xs font-semibold">Tidak ada baris data yang cocok dengan kriteria pencarian / filter.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 sticky top-0">
+                        <th className="p-2.5 w-12 text-center">No.</th>
+                        <th className="p-2.5 w-36">Status Format</th>
+                        <th className="p-2.5">Nama Lengkap Siswa</th>
+                        <th className="p-2.5 w-32 font-mono">NISN</th>
+                        <th className="p-2.5 w-24">Kelas</th>
+                        <th className="p-2.5">Email Akun</th>
+                        <th className="p-2.5 font-mono w-28">Password</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                      {filtered.map((s, idx) => (
+                        <tr
+                          key={idx}
+                          className={`transition ${
+                            s.isValid
+                              ? "hover:bg-slate-50 dark:hover:bg-slate-700/40"
+                              : "bg-amber-50/60 dark:bg-amber-950/20 hover:bg-amber-100/60"
+                          }`}
+                        >
+                          <td className="p-2.5 text-center text-slate-400 font-mono text-[11px]">
+                            {idx + 1}
+                          </td>
+                          <td className="p-2.5">
+                            {s.isValid ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/80 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+                                <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Siap Impor
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-200/80 dark:bg-amber-950/80 dark:text-amber-200 px-2 py-0.5 rounded-full" title={s.errorReason}>
+                                <XCircle className="h-3 w-3 text-amber-600" /> {s.errorReason || "Format Salah"}
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-2.5 font-bold text-slate-800 dark:text-slate-100">
+                            {s.nama || <span className="text-amber-600 italic">(Nama Kosong)</span>}
+                          </td>
+                          <td className="p-2.5 font-mono font-semibold text-slate-700 dark:text-slate-300">
+                            {s.nisn || <span className="text-amber-600 italic">(Kosong)</span>}
+                          </td>
+                          <td className="p-2.5">
+                            <span className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-2 py-0.5 rounded-md font-medium text-[11px]">
+                              {s.kelas || "X-1"}
+                            </span>
+                          </td>
+                          <td className="p-2.5 font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                            {s.email}
+                          </td>
+                          <td className="p-2.5 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                            {s.password || s.nisn}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="relative w-full sm:w-auto">
+                <label className="cursor-pointer inline-flex items-center justify-center gap-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-2xs w-full sm:w-auto">
+                  <UploadCloud className="h-4 w-4 text-indigo-600" />
+                  <span>Pilih Berkas Spreadsheet Lain</span>
+                  <input
+                    type="file"
+                    accept=".csv, .xls, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                    onChange={handleBulkFileChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowImportPreviewModal(false)}
+                  className="px-4 py-2 bg-slate-200/80 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={isSubmittingBulk || parsedStudents.filter(s => s.isValid).length === 0}
+                  onClick={handleProcessBulkImport}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold rounded-xl text-xs transition shadow-md shadow-indigo-200 dark:shadow-none flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isSubmittingBulk ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>Memproses Simpan Data...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileUp className="h-4 w-4" />
+                      <span>Konfirmasi & Simpan {parsedStudents.filter(s => s.isValid).length} Data Valid</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

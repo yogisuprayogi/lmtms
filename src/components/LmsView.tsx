@@ -66,28 +66,56 @@ const MOCK_CP = [
     kelas: "X",
     elemen: "BK",
     namaElemen: "Berpikir Komputasional",
-    deskripsi: "Siswa mampu menerapkan berpikir komputasional untuk memecahkan masalah sehari-hari yang melibatkan data besar, struktur data bertipe daftar/list, tumpukan/stack, dan antrean/queue, serta merancang algoritma pencarian dan pengurutan secara logis."
+    deskripsi: "Kemampuan untuk menyelesaikan masalah secara sistematis dan berjenjang melalui pemodelan dan melalui simulasi untuk menghasilkan solusi efektif, efisien, dan optimal yang dapat dijalankan oleh manusia atau mesin meliputi penalaran logis, kritis, dan kreatif berdasarkan data, baik secara mandiri maupun berkolaborasi."
+  },
+  {
+    fase: "E",
+    kelas: "X",
+    elemen: "LD",
+    namaElemen: "Literasi Digital",
+    deskripsi: "Kecakapan bermedia digital, berperilaku etis dan berbudaya di dunia digital, berkemampuan menjaga keamanan diri dan lingkungan, serta memiliki kenyamanan dan keseimbangan hidup di dunia nyata sekaligus dunia maya."
+  },
+  {
+    fase: "E",
+    kelas: "X",
+    elemen: "AD",
+    namaElemen: "Analisis Data",
+    deskripsi: "Kemampuan untuk menstrukturkan, menginput, memproses (antara lain menganalisis, mengambil kesimpulan, membuat keputusan, dan memprediksi), dan menyajikan data dalam berbagai bentuk representasi, seperti teks, audio, gambar, dan video."
   },
   {
     fase: "E",
     kelas: "X",
     elemen: "AP",
     namaElemen: "Algoritma dan Pemrograman",
-    deskripsi: "Siswa mampu membaca, menerjemahkan, dan menulis kode program prosedural dalam bahasa Python, menggunakan tipe data variabel, operasi logika, percabangan kondisional, perulangan, dan fungsi sederhana untuk menyelesaikan persoalan."
+    deskripsi: "Mengembangkan solusi dari berbagai persoalan dengan membaca bermakna dan menulis teks algoritmik terstruktur (logis, sistematis, bertahap, konvergen, dan linier) menjadi kumpulan instruksi yang dapat dikerjakan orang lain atau komputer, berdasarkan paradigma pemrograman prosedural dengan ukuran dan kompleksitas program yang menaik secara bertahap dan berjenjang, dapat dikerjakan secara mandiri atau berkolaborasi dengan yang lain."
+  },
+  {
+    fase: "F",
+    kelas: "XI/XII",
+    elemen: "BK",
+    namaElemen: "Berpikir Komputasional (Fase F)",
+    deskripsi: "Pada Fase F, peserta didik mampu menganalisis strategi algoritmik tingkat lanjut, struktur data kompleks (tree, graph), serta menyelesaikan persoalan komputasi melalui pemodelan dan simulasi untuk menghasilkan solusi efektif dan optimal."
+  },
+  {
+    fase: "F",
+    kelas: "XI/XII",
+    elemen: "LD",
+    namaElemen: "Literasi Digital (Fase F)",
+    deskripsi: "Pada Fase F, peserta didik mampu mengevaluasi etika dan keamanan siber tingkat lanjut, kecakapan bermedia digital, tata kelola data pribadi, serta merancang kampanye keselamatan digital."
   },
   {
     fase: "F",
     kelas: "XI/XII",
     elemen: "AD",
-    namaElemen: "Analisis Data",
-    deskripsi: "Siswa mampu memproses data kuantitatif dalam jumlah besar secara efisien, melakukan pemodelan data, visualisasi interaktif, dan menerapkan teknik penambangan data sederhana untuk memprediksi tren masa depan."
+    namaElemen: "Analisis Data (Fase F)",
+    deskripsi: "Pada Fase F, peserta didik mampu mengumpulkan, menstrukturkan, mengolah, dan menganalisis data bervolume besar secara efisien, serta menyajikan visualisasi interaktif untuk mendukung pengambilan keputusan."
   },
   {
     fase: "F",
     kelas: "XI/XII",
-    elemen: "JKI",
-    namaElemen: "Jaringan Komputer dan Internet",
-    deskripsi: "Siswa mampu mengonfigurasi arsitektur jaringan LAN/WAN, mengamankan transmisi data nirkabel, memahami enkripsi SSL/TLS, serta mendeteksi ancaman intrusi pada infrastruktur internet modern."
+    elemen: "AP",
+    namaElemen: "Algoritma dan Pemrograman (Fase F)",
+    deskripsi: "Pada Fase F, peserta didik mampu menerapkan paradigma Pemrograman Berorientasi Objek (PBO/OOP) dan pemrograman modular terstruktur untuk mengembangkan aplikasi skala menengah hingga besar."
   }
 ];
 
@@ -2021,9 +2049,13 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
           <div className="p-6 space-y-6">
             <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <span className="text-xs font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-1 rounded">CP Kurikulum</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-rose-600 uppercase tracking-widest bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-md">Regulasi Resmi Kurikulum 2025</span>
+                  <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">SK BSKAP No. 046/H/KR/2025</span>
+                  <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Permendikdasmen No. 10, 12 & 13 Th 2025</span>
+                </div>
                 <h2 className="text-lg font-display font-bold text-slate-800 mt-2">Daftar Capaian Pembelajaran (CP) Informatika SMA</h2>
-                <p className="text-slate-500 text-xs">Capaian Pembelajaran (Fase E & Fase F) yang ditetapkan resmi oleh Kemendikbudristek untuk bidang Informatika.</p>
+                <p className="text-slate-500 text-xs">Capaian Pembelajaran (Fase E & Fase F) berpatokan resmi pada Permendikdasmen No. 10, 12, 13 Tahun 2025 & SK BSKAP Kemendikdasmen No. 046/H/KR/2025 sebagai default acuan nasional.</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <SubmenuDownloadHeaderButton tabId="cp" title="Capaian Pembelajaran (CP)" />
@@ -2037,6 +2069,20 @@ export const LmsView: React.FC<LmsViewProps> = ({ user }) => {
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* INFORMATIONAL REGULATION BANNER */}
+            <div className="bg-gradient-to-r from-slate-900 to-rose-950 text-white p-4 rounded-xl shadow-sm border border-rose-900/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="space-y-1">
+                <p className="font-bold flex items-center gap-1.5 text-rose-300">
+                  <BookOpen className="h-4 w-4 text-rose-400 shrink-0" />
+                  <span>Landasan Hukum Acuan Kurikulum & CP Resmi:</span>
+                </p>
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  Seluruh deskripsi CP, penyusunan ATP, Modul Ajar, dan RPP di LMTMS terintegrasi otomatis dengan regulasi resmi Kemendikdasmen RI: <strong>Permendikdasmen No. 10/2025 (SKL)</strong>, <strong>Permendikdasmen No. 12/2025 (Standar Isi)</strong>, <strong>Permendikdasmen No. 13/2025 (Kurikulum PAUD, Dasmen)</strong>, dan <strong>SK BSKAP No. 046/H/KR/2025 (Capaian Pembelajaran)</strong>.
+                </p>
+              </div>
+              <span className="shrink-0 font-mono text-[10px] bg-rose-500/20 text-rose-200 border border-rose-500/30 px-2.5 py-1 rounded-lg">Default Baseline Active</span>
             </div>
 
             {/* CP GRID & FORM CONTAINER */}
