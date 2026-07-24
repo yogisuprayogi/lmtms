@@ -69,11 +69,13 @@ interface GuruMapping {
 
 interface AcademicManagementViewProps {
   user: User;
+  onActivateYear?: (id: string) => void;
+  activeYearId?: string;
 }
 
 type SubTab = "tahun" | "kalender" | "guru" | "siswa" | "rombel" | "jadwal" | "mapping" | "identitas";
 
-export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ user }) => {
+export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ user, onActivateYear, activeYearId }) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("tahun");
   const [identitasForm, setIdentitasForm] = useState({
     nama: "SMAN 1 Informatika",
@@ -227,6 +229,7 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
       if (res.ok && data.success) {
         triggerNotification("success", "Tahun pelajaran aktif berhasil diperbarui!");
         loadAllData();
+        if (onActivateYear) onActivateYear(id);
       } else {
         triggerNotification("error", data.message || "Gagal mengaktifkan tahun pelajaran.");
       }
@@ -842,8 +845,8 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
       {/* 1. TAHUN & SEMESTER */}
       {activeSubTab === "tahun" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="subtab-tahun">
-          {/* Admin Input Form */}
-          {user.role === "ADMIN" ? (
+          {/* Admin & Guru Input Form */}
+          {user.role === "ADMIN" || user.role === "GURU" ? (
             <div className="lg:col-span-1 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4 h-fit">
               <h3 className="font-display font-bold text-slate-800 text-sm flex items-center gap-1.5 border-b border-slate-100 pb-3">
                 <Plus className="h-4 w-4 text-indigo-600" />
@@ -874,7 +877,7 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1.5"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Tambahkan Tahun</span>
@@ -883,14 +886,14 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
             </div>
           ) : (
             <div className="lg:col-span-1 bg-slate-50 p-5 border border-slate-200 rounded-2xl text-slate-500 text-xs h-fit leading-relaxed">
-              <p className="font-bold text-slate-800 mb-2">Akses Terbatas</p>
-              Hanya Administrator sekolah yang memiliki otorisasi penuh untuk menambah, mengedit, atau mengaktifkan Tahun Pelajaran dan Semester baru di sistem LMTMS.
+              <p className="font-bold text-slate-800 mb-2">Akses Siswa</p>
+              Tahun pelajaran aktif diatur oleh Guru Pengampu dan Administrator Sekolah.
             </div>
           )}
 
           {/* List TP */}
           <div className="lg:col-span-2 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4">
-            <h3 className="font-display font-bold text-slate-800 text-sm">Riwayat Tahun Pelajaran & Status</h3>
+            <h3 className="font-display font-bold text-slate-800 text-sm">Riwayat Tahun Pelajaran & Status Akses</h3>
             <div className="divide-y divide-slate-100">
               {years.map((y) => (
                 <div key={y.id} className="py-4 flex justify-between items-center text-xs hover:bg-slate-50/50 px-2 rounded-lg transition">
@@ -905,19 +908,19 @@ export const AcademicManagementView: React.FC<AcademicManagementViewProps> = ({ 
                       </span>
                     </div>
                   </div>
-                  {y.aktif ? (
-                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm shadow-emerald-50">
+                  {y.aktif || y.id === activeYearId ? (
+                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-xs">
                       <Check className="h-3.5 w-3.5" />
                       Aktif Sekarang
                     </span>
                   ) : (
-                    user.role === "ADMIN" && (
+                    (user.role === "ADMIN" || user.role === "GURU") && (
                       <button
                         type="button"
                         onClick={() => handleActivateTp(y.id)}
-                        className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-3 py-1.5 rounded-xl transition"
+                        className="bg-indigo-50 border border-indigo-200 hover:bg-indigo-600 hover:text-white text-indigo-700 font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
                       >
-                        Aktifkan
+                        Pilih & Aktifkan
                       </button>
                     )
                   )}

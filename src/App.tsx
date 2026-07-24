@@ -1361,6 +1361,8 @@ export default function App() {
         <Header
           user={user}
           activeYear={activeYear}
+          years={years}
+          onSelectYear={handleActivateTp}
           notifications={notifications}
           onClearNotification={handleClearNotification}
           onClearAllNotifications={handleClearAllNotifications}
@@ -2199,7 +2201,11 @@ export default function App() {
           {/* TAB 6: ADMINISTRASI AKADEMIK & TAHUN    */}
           {/* ======================================= */}
           {currentTab === "administrasi" && (user.role === "ADMIN" || user.role === "GURU") && (
-            <AcademicManagementView user={user} />
+            <AcademicManagementView
+              user={user}
+              onActivateYear={handleActivateTp}
+              activeYearId={activeYear?.id}
+            />
           )}
 
           {/* ======================================= */}
@@ -2226,6 +2232,9 @@ export default function App() {
                 setUser(updatedUser);
                 localStorage.setItem("lmtms_user", JSON.stringify(updatedUser));
               }}
+              activeYear={activeYear}
+              years={years}
+              onSelectYear={handleActivateTp}
               isDarkMode={isDarkMode}
               onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
               activeTheme={activeTheme}

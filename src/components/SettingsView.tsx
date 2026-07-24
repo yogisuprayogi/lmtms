@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Shield, KeyRound, Smartphone, Save, AlertCircle, CheckCircle, Fingerprint, Palette, Sun, Moon, Wifi, Lock, User as UserIcon, Camera, Upload, Trash2 } from "lucide-react";
-import { User } from "../types";
+import { Shield, KeyRound, Smartphone, Save, AlertCircle, CheckCircle, Fingerprint, Palette, Sun, Moon, Wifi, Lock, User as UserIcon, Camera, Upload, Trash2, Calendar } from "lucide-react";
+import { User, TahunPelajaran } from "../types";
 
 interface SettingsViewProps {
   user: User;
   onUpdateUser: (updatedUser: User) => void;
+  activeYear?: TahunPelajaran | null;
+  years?: TahunPelajaran[];
+  onSelectYear?: (yearId: string) => void;
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
   activeTheme?: string;
@@ -19,6 +22,9 @@ interface SettingsViewProps {
 export const SettingsView: React.FC<SettingsViewProps> = ({
   user,
   onUpdateUser,
+  activeYear,
+  years = [],
+  onSelectYear,
   isDarkMode = false,
   onToggleDarkMode,
   activeTheme = "classic",
@@ -732,6 +738,47 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Section: Konfigurasi Akses Tahun Pelajaran */}
+          {(user.role === "GURU" || user.role === "ADMIN") && (
+            <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm space-y-4" id="settings-academic-year-card">
+              <h4 className="font-display font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-indigo-600" />
+                <span>Pengaturan Akses Tahun Pelajaran Guru</span>
+              </h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Pilih Tahun Pelajaran & Semester yang ingin Anda akses saat ini. Pengaturan ini memberi Anda fleksibilitas penuh untuk mengelola perangkat ajar, materi, absensi, dan nilai pada tahun pelajaran berjalan maupun tahun sebelumnya.
+              </p>
+
+              <div className="bg-indigo-50/60 border border-indigo-150 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full inline-block mb-1">
+                    Tahun Pelajaran Aktif Anda
+                  </span>
+                  <div className="font-mono font-bold text-slate-900 text-sm sm:text-base">
+                    {activeYear ? `Tahun Pelajaran ${activeYear.tahun} (${activeYear.semester})` : "Belum ditentukan"}
+                  </div>
+                </div>
+
+                {years && years.length > 0 && (
+                  <div className="w-full sm:w-64 space-y-1">
+                    <label className="block text-[11px] font-semibold text-slate-600">Ganti Tahun Pelajaran:</label>
+                    <select
+                      value={activeYear?.id || ""}
+                      onChange={(e) => onSelectYear && onSelectYear(e.target.value)}
+                      className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-xs font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer shadow-2xs"
+                    >
+                      {years.map((y) => (
+                        <option key={y.id} value={y.id}>
+                          {y.tahun} - {y.semester} {y.id === activeYear?.id ? "(Aktif)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Section 5: PWA Offline Sync & Notification Simulator Dashboard */}
           <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm space-y-4">
